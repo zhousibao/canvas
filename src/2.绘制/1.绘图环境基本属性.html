@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        margin: 10px;
+        padding: 10px;
+        background: #fff;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+<canvas id="canvas" width="600" height="600">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+/**
+ * context 绘图环境
+ * font 字体
+ * fillStyle 填充颜色
+ * strokeStyle 描绘颜色
+ * textBaseline 绘制文字的垂直对齐方式                 top（顶部对齐） hanging（悬挂） middle（中间对齐） bottom（底部对齐） alphabetic是默认值
+ * textAlign 绘制文字的水平对齐方式
+ * 
+ * fillText(text,x,y) 填充文字：text文字、(x,y)起始点的坐标
+ * strokeText(text,x,y) 描绘文字：text(文字)、(x,y)起始点的坐标
+ * 
+ * save() 保存当前绘图环境
+ * restore() 恢复绘图环境
+ * 
+ * 
+ */    
+var canvas = document.getElementById('canvas'),
+context = canvas.getContext('2d');
+//console.log(context)
+
+
+context.font = '28px Arial';
+context.fillStyle = '#f96331';
+context.strokeStyle = 'blue';
+context.textBaseline = 'top';
+
+
+context.save();
+context.fillStyle = 'red';
+context.strokeStyle = 'black'
+context.textAlign = 'right';
+context.fillText('这是红色',200,10)
+context.strokeText('这是黑色',200,50)
+
+
+
+context.restore();
+context.fillText('这是橘黄色',10,100)
+context.strokeText('这是蓝色',10,140)
+
+</script>
+</html>

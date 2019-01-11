@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body {
+        background: #ddd;
+        margin: 0;
+    }
+
+    #canvas {
+        margin: 10px;
+        padding: 10px;
+        background: #fff;
+        border: thin inset #aaa;
+    }
+</style>
+<body>
+<canvas id="canvas" width="600" height="600">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+/**
+ * measureText
+ * 在画布上输出文本之前，测量字体  (只返回字体宽度)
+*/
+const canvas = document.getElementById('canvas'), 
+con = canvas.getContext('2d');
+
+const fontHeight = 15,
+  margin = 45,
+  numberSpacing = 20,
+  radius = canvas.width/2 - margin,
+  handRadius = radius + numberSpacing;
+
+con.font = fontHeight + 'px Arial';
+setInterval(drawClock,1000);
+
+
+function drawClock(){
+  con.clearRect(0,0,canvas.width,canvas.height);
+  drawCircle();
+  drawNumber();
+  drawCenter();
+  drawHands();
+}
+
+//时钟外圈大圆
+function drawCircle(){
+  con.beginPath();
+  con.arc(canvas.width/2,canvas.height/2,radius,0,Math.PI*2,true);
+  con.stroke();
+}
+
+//数字
+function drawNumber(){
+  var number = [1,2,3,4,5,6,7,8,9,10,11,12],
+  angle = 0,
+  numberWidth = 0;
+  number.forEach(function(x){
+    angle = Math.PI/6*(x-3);
+    numberWidth = con.measureText(x).width;
+    con.fillText(x,
+      canvas.width/2 + Math.cos(angle)*(handRadius) - numberWidth/2,
+      canvas.height/2 + Math.sin(angle)*(handRadius) - fontHeight/3,
+      );
+  });
+}
+
+//时钟圆心
+function drawCenter(){
+  con.beginPath();
+  con.arc(canvas.width/2,canvas.height/2,5,0,Math.PI*2,true);
+  con.fill();
+}
+
+
+//时钟指针
+function drawHands(){
+  var date = new Date(),
+  hour = date.getHours();
+  hour = hour >12 ? hour-12 : hour;
+
+  drawHand(hour*5 + (date.getMinutes()/60)*5,0.7);
+  drawHand(date.getMinutes(),0.8);
+  drawHand(date.getSeconds(),0.9);
+}
+function drawHand(loc,length){
+  var angle = (Math.PI*2)*(loc/60)-Math.PI/2;
+  hander = radius*length;
+  con.moveTo(canvas.width/2,canvas.height/2);
+  con.lineTo(canvas.width/2 + Math.cos(angle)*hander,canvas.height/2 + Math.sin(angle)*hander);
+  con.stroke();
+}
+
+
+</script>
+</html>

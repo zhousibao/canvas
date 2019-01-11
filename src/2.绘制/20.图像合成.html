@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        margin: 10px;
+        padding: 10px;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+  <pre>
+      "source-over", // 新图形覆盖原有图形 默认
+      "source-atop", // 新图形覆盖原有图形，新图形未重叠部分透明
+      "source-in", // 新图形覆盖原有图形，所有未重叠部分透明
+      "source-out", // 新图形的未重叠部分显示，原有图形和重叠部分透明
+      "destination-atop", // 原有图形覆盖新图形，原有图形未重叠部分透明
+      "destination-in", // 原有图形覆盖新图形，所有未重叠部分透明
+      "destination-out", // 原有图形未重叠部分显示，新图形和重叠部分透明
+      "destination-over", // 原有图形覆盖新图形
+      "lighter", // 重叠部分颜色叠加
+      "copy", // 只显示新图形
+      "xor" // 所有未重叠部分显示，重叠部分透明
+  </pre>
+  <div>
+      <select id="type">
+          <option value="source-over" selected>source-over</option>
+          <option value="source-atop">source-atop</option>
+          <option value="source-in">source-in</option>
+          <option value="source-out">source-out</option>
+          <option value="destination-atop">destination-atop</option>
+          <option value="destination-in">destination-in</option>
+          <option value="destination-out">destination-out</option>
+          <option value="destination-over">destination-over</option>
+          <option value="lighter">lighter</option>
+          <option value="copy">copy</option>
+          <option value="xor">xor</option>
+      </select>
+  </div>
+  <canvas id="canvas" width="600" height="600">
+      Canvas not supported
+  </canvas>
+
+</body>
+<script>
+/**
+  "source-over", // 新图形覆盖原有图形 默认
+  "source-atop", // 新图形覆盖原有图形，新图形未重叠部分透明
+  "source-in", // 新图形覆盖原有图形，所有未重叠部分透明
+  "source-out", // 新图形的未重叠部分显示，原有图形和重叠部分透明
+  "destination-atop", // 原有图形覆盖新图形，原有图形未重叠部分透明
+  "destination-in", // 原有图形覆盖新图形，所有未重叠部分透明
+  "destination-out", // 原有图形未重叠部分显示，新图形和重叠部分透明
+  "destination-over", // 原有图形覆盖新图形
+  "lighter", // 重叠部分颜色叠加
+  "copy", // 只显示新图形
+  "xor" // 所有未重叠部分显示，重叠部分透明
+
+ */
+var canvas = document.getElementById('canvas'),
+type = document.getElementById('type'),
+con = canvas.getContext('2d');
+con.translate(200, 200);
+
+
+function drawArc(){
+  con.save();
+  con.fillStyle = 'blue';
+  con.beginPath();
+  con.arc(0,0,200,0,Math.PI*2,false);
+  con.closePath();
+  con.fill();
+  con.restore();
+}
+
+function drawRect(){
+  con.save();
+  con.fillStyle = 'red';
+  con.beginPath();
+  con.rect(0,0,300,300);
+  con.closePath();
+  con.fill();
+  con.restore();
+}
+
+type.onchange = function(){
+  con.clearRect(0,0,canvas.width,canvas.height);
+  draw();
+}
+
+draw();
+function draw(){
+  console.log(type.value)
+  drawArc();
+  con.globalCompositeOperation = type.value;
+  drawRect();
+}
+
+
+
+
+
+</script>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        background: #fff;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+<div id="controls">
+    Stroke color:
+    <select id="strokeStyle">
+        <option value="red" selected>red</option>
+        <option value="green">green</option>
+        <option value="blue">blue</option>
+        <option value="orange">orange</option>
+    </select>
+
+
+    Fill color:
+    <select id="fillCheckbox">
+        <option value="red" selected>red</option>
+        <option value="green">green</option>
+        <option value="blue">blue</option>
+        <option value="orange">orange</option>
+    </select>
+
+    isFill:
+    <input id="isFill" type="checkbox" checked/>
+
+    Guidewires:
+    <input id="guidewireCheckbox" type="checkbox" checked/>
+
+    <input id="clear" type="button" value="清除">
+
+
+    Sides:
+    <select id="Sides">
+        <option value="3" selected>3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+    </select>
+
+    StartAngle:
+    <select id="StartAngle">
+        <option value="0" selected>0</option>
+        <option value="45">45</option>
+        <option value="60">60</option>
+        <option value="90">90</option>
+    </select>
+</div>
+
+<canvas id="canvas" width="600" height="600">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+    var canvas = document.getElementById('canvas'),
+        con = canvas.getContext('2d');
+
+    var strokeStyleSelect = document.getElementById('strokeStyle');
+    var fillCheckbox = document.getElementById('fillCheckbox');
+    var isFill = document.getElementById('isFill');
+    var guidewireCheckbox = document.getElementById('guidewireCheckbox');
+    var clear = document.getElementById('clear');
+
+    var sidesSelect = document.getElementById('Sides');
+    var startAngleSelect = document.getElementById('StartAngle');
+
+    var mousedown = {},
+        drawingSurfaceImageData,
+        dragging = false,
+        guidewires = guidewireCheckbox.checked;
+
+
+    //初始化
+    con.strokeStyle = strokeStyleSelect.value;
+    con.fillStyle = fillCheckbox.value;
+    //切换strokeStyle
+    strokeStyleSelect.onchange = function(){
+        con.strokeStyle = strokeStyleSelect.value;
+    }
+    //切换fillStyle
+    fillCheckbox.onchange = function(){
+        con.fillStyle = fillCheckbox.value;
+    }
+    guidewireCheckbox.onchange = function(){
+        guidewires = guidewireCheckbox.checked;
+    }
+    clear.onclick = function(){
+        con.clearRect(0,0,canvas.width,canvas.height);
+        drawGrid('lightgray',10,10);
+        saveDrawingSurface();
+        con.strokeStyle = strokeStyleSelect.value;
+        con.fillStyle = fillCheckbox.value;
+    }
+
+
+    //绘制网格
+    function drawGrid(color,stepx,stepy){
+        con.save();
+        con.strokeStyle = color;
+        con.lineWidth = 0.5;
+
+        for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+            con.beginPath();
+            con.moveTo(i,0);
+            con.lineTo(i,canvas.height);
+            con.stroke();
+        }
+
+        for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+            con.beginPath();
+            con.moveTo(0,i);
+            con.lineTo(canvas.width,i);
+            con.stroke();
+        }
+        con.restore();
+    }
+    drawGrid('lightgray',10,10);
+
+
+
+
+
+    //窗口坐标转换为canvas坐标
+    function windowToCanvas(x,y){
+        let bbox = canvas.getBoundingClientRect();
+        return {
+            x:x-bbox.left*(canvas.width / bbox.width),
+            y:y-bbox.top*(canvas.height / bbox.height)
+        }
+    }
+
+    //保留当前画布ImageData
+    function saveDrawingSurface() {
+        drawingSurfaceImageData = con.getImageData(0,0,canvas.width,canvas.height)
+    }
+    //把上一步保留的ImageData绘制到画布上
+    function restoreDrawingSurface(){
+        con.putImageData(drawingSurfaceImageData,0,0);
+    }
+
+
+
+    //事件
+    canvas.onmousedown = function(e){
+        let loc = windowToCanvas(e.clientX,e.clientY);
+        e.preventDefault();
+
+        saveDrawingSurface();
+        mousedown.x = loc.x;
+        mousedown.y = loc.y;
+
+        dragging = true;
+    }
+    canvas.onmousemove = function (e) {
+        let loc = windowToCanvas(e.clientX,e.clientY);
+
+        if(dragging){
+            e.preventDefault();
+
+            restoreDrawingSurface();//相当于擦除过程中的线段
+            drawRubberbandShape(loc);
+
+            if(guidewires){
+                drawGuidewires(loc.x,loc.y);
+            }
+        }
+    }
+    canvas.onmouseup = function (e) {
+        let loc = windowToCanvas(e.clientX,e.clientY);
+
+        restoreDrawingSurface();//相当于擦除过程中的最后一次线段
+        drawRubberbandShape(loc);
+        dragging = false;
+
+    }
+
+
+    
+
+
+    // 绘制辅助线
+    function drawHorizontalLine(y){
+        con.beginPath();
+        con.moveTo(0,y+0.5);
+        con.lineTo(canvas.width,y+0.5);
+        con.stroke();
+    }
+    function drawVerticlaLine(x) {
+        con.beginPath();
+        con.moveTo(x+0.5,0);
+        con.lineTo(x+0.5,canvas.height);
+        con.stroke();
+    }
+    function drawGuidewires(x,y){
+        con.save();
+        con.strokeStyle = 'rgba(0,0,230,0.4)';
+        con.lineWidth = 0.5;
+        drawVerticlaLine(x);
+        drawHorizontalLine(y);
+        con.restore();
+    }
+
+
+
+    /*点*/
+    var Point = function(x,y){
+        this.x = x;
+        this.y = y;
+    }
+    /* 多边形 constructor */
+    var Polygon = function(x,y,radius,sides,startAngle,strokeStyle,fillStyle,filled){
+      this.x = x;
+      this.y = y;
+      this.radius = radius;
+      this.sides = sides;
+      this.startAngle = startAngle;
+      this.strokeStyle = strokeStyle;
+      this.fillStyle = fillStyle;
+    }
+    // Polygon prototype
+    Polygon.prototype = {
+      //获取所有点
+      getPoints:function(){
+        let points = [],
+        angle = this.startAngle || 0;
+        for(let i=0; i<this.sides; i++){
+          points.push(new Point(this.x + this.radius*Math.sin(angle),this.y - this.radius*Math.cos(angle)));
+          angle += 2*Math.PI/this.sides;
+        }
+        return points;
+      },
+      //链接所有点
+      createPath: function(con){
+        let points = this.getPoints();
+
+        con.beginPath();
+        con.moveTo(points[0].x,points[0].y);
+        for(let i =1; i<this.sides; i++){
+            con.lineTo(points[i].x,points[i].y)
+        }
+        con.closePath();
+      },
+      stroke: function(con){
+        con.save();
+        this.createPath(con);
+        con.strokeStyle = this.strokeStyle;
+        con.stroke();
+        con.restore();
+      },
+      fill: function(con){
+        con.save();
+        this.createPath(con);
+        con.fillStyle = this.fillStyle;
+        con.fill();
+        con.restore();
+      },
+      move: function(x,y){
+        this.x = x;
+        this.y = y;
+      }
+    }
+
+    // 绘制多边形
+    function drawRubberbandShape(loc){
+      const radius = Math.max(Math.abs(loc.x - mousedown.x),Math.abs(loc.y - mousedown.y));
+      var polygon = new Polygon(
+            mousedown.x,
+            mousedown.y,
+            radius,
+            parseInt(sidesSelect.value),
+            (Math.PI/180)*parseInt(startAngleSelect.value),
+            con.strokeStyle,
+            con.fillStyle
+          );
+
+      polygon.stroke(con);
+      if(isFill.checked){
+        polygon.fill(con);
+      }
+    }
+
+
+
+
+</script>
+</html>

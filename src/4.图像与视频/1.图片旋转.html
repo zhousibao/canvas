@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+#container{
+  width: 600px;
+  height: 600px;
+  position:relative;
+}
+</style>
+<body>
+  <div id="container">
+      <input id="rotate" type="button" value="旋转">
+    <canvas id="canvas" width="800" height="800">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+var rotate = document.getElementById('rotate');
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+var rotateTimes = 0;
+
+// 旋转
+  rotate.onclick = function(){
+  rotateImage()
+}
+
+
+changeImage()
+function changeImage() {
+  const img = new Image()
+  img.src = 'a.jpg'
+
+  img.onload = function() {
+    // console.log(img.src)
+    console.log(img.width, img.height)
+
+
+    //con.clearRect(0, 0, canvas.width, canvas.height)
+    con.drawImage(img, 0, 0, 200, 300, 100, 100, img.width, img.height)
+  }
+}
+
+function rotateImage() {
+  con.clearRect(0, 0, canvas.width, canvas.height)
+
+  const img = new Image()
+  img.src = 'a.jpg'
+
+  img.onload = function() {
+    if (rotateTimes % 4 === 0) {
+      console.log('90')
+
+      con.save()
+      con.translate(canvas.width,0)
+      con.rotate(Math.PI / 2)
+      con.drawImage(img, 0, 0, 200, 300, 100, 100, img.width, img.height)
+      con.restore()
+
+    } else if(rotateTimes % 4 === 1) {
+      console.log('180')
+
+      con.save()
+      con.translate(canvas.width,canvas.height)
+      con.rotate(Math.PI)
+      con.drawImage(img, 0, 0, 200, 300, 100, 100, img.width, img.height)
+      con.restore()
+
+    }else if (rotateTimes % 4 === 2) {
+      console.log('270')
+
+      con.save()
+      con.translate(0,canvas.height)
+      con.rotate(Math.PI * 3 / 2)
+      con.drawImage(img, 0, 0, 200, 300, 100, 100, img.width, img.height)
+      con.restore()
+
+    } else {
+      console.log('360')
+
+      con.drawImage(img, 0, 0, 200, 300, 100, 100, img.width, img.height)
+    }
+    rotateTimes = rotateTimes + 1
+  }
+}
+
+
+
+</script>
+</html>

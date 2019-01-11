@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+#container{
+  width: 800px;
+  height: 800px;
+  position:relative;
+}
+</style>
+<body>
+  <div id="container">
+    <input id="selectRange" type="range" min="1" max="3.0" step="0.1" value="1.0">
+    <canvas id="canvas" width="800" height="800">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+var selectRange = document.getElementById('selectRange');
+var scale = 1;
+
+var image = new Image();
+image.src = 'b.jpg';
+image.onload = function(e){
+  drawImage()
+}
+
+// 缩放
+selectRange.onchange = function(e){
+  scale = e.target.value;
+
+  if(scale < 1){
+    scale = 1
+  }
+  if(scale > 3){
+    scale = 3
+  }
+  drawImage()
+}
+
+
+function drawImage(){
+  var w = canvas.width;
+  h = canvas.height;
+
+  sw = w*scale;
+  sh = h*scale;
+
+  con.clearRect(0,0,canvas.width,canvas.height);
+  con.drawImage(image,-sw/2 + w/2 ,-sh/2+ h/2, sw,sh);
+}
+
+
+
+</script>
+</html>

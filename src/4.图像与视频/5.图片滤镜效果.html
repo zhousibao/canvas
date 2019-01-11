@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+#container{
+  width: 800px;
+  height: 800px;
+  position:relative;
+}
+</style>
+<body>
+  <div id="container">
+    <input id="fu" type="button" value="负片滤镜">
+    <input id="hei" type="button" value="黑白滤镜">
+    <canvas id="canvas" width="800" height="800">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+
+
+var fu = document.getElementById('fu');
+var hei = document.getElementById('hei');
+
+var image = new Image();
+image.crossOrigin = 'anonymous'
+image.src = 'http://img5.imgtn.bdimg.com/it/u=1026146164,1546452361&fm=11&gp=0.jpg';
+
+image.onload = function(e){
+  
+  con.drawImage(image,0,0,canvas.width,canvas.height)
+}
+
+// 负片滤镜
+fu.onclick = function(e){
+  var imageData = con.getImageData(0,0,canvas.width,canvas.height);
+  var data = imageData.data;
+
+  for(let i=0; i<data.length - 4; i += 4){
+    data[i] = 255 - data[i]
+    data[i + 1] = 255 - data[i + 1]
+    data[i + 2] = 255 - data[i + 2]
+  }
+
+  con.putImageData(imageData,0 ,0)
+}
+
+// 黑白滤镜
+hei.onclick = function(e){
+  var imageData = con.getImageData(0,0,canvas.width,canvas.height);
+  var data = imageData.data;
+
+  for(let i=0; i<data.length - 4; i += 4){
+    let average = (data[i] + data[i+1] + data[i+2]) / 3;
+    data[i] = average
+    data[i + 1] = average
+    data[i + 2] = average
+  }
+
+  con.putImageData(imageData,0 ,0)
+}
+
+
+
+
+</script>
+</html>

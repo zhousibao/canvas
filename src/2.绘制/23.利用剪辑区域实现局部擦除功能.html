@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        background: #fff;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+<div id="controls">
+    Stroke color:
+    <select id="strokeStyle">
+        <option value="red" selected>red</option>
+        <option value="green">green</option>
+        <option value="blue">blue</option>
+        <option value="orange">orange</option>
+    </select>
+
+
+    Fill color:
+    <select id="fillCheckbox">
+        <option value="red" selected>red</option>
+        <option value="green">green</option>
+        <option value="blue">blue</option>
+        <option value="orange">orange</option>
+    </select>
+
+    isFill:
+    <input id="isFill" type="checkbox" checked/>
+
+    isEraser:
+    <input id="isEraserCheckbox" type="checkbox"/>
+
+    <input id="clear" type="button" value="清除">
+</div>
+
+<canvas id="canvas" width="1000" height="800">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+var canvas = document.getElementById('canvas'),
+  con = canvas.getContext('2d');
+
+var strokeStyleSelect = document.getElementById('strokeStyle');
+var fillCheckbox = document.getElementById('fillCheckbox');
+var isFill = document.getElementById('isFill');
+var isEraserCheckbox = document.getElementById('isEraserCheckbox');
+var clear = document.getElementById('clear');
+var mousedown = {},
+    windowMouseup = {},
+    rectShape = {},
+    drawingSurfaceImageData,
+    dragging = false;
+
+//初始化
+con.strokeStyle = strokeStyleSelect.value;
+con.fillStyle = fillCheckbox.value;
+//切换strokeStyle
+strokeStyleSelect.onchange = function(){
+  con.strokeStyle = strokeStyleSelect.value;
+}
+//切换fillStyle
+fillCheckbox.onchange = function(){
+  con.fillStyle = fillCheckbox.value;
+}
+clear.onclick = function(){
+  con.clearRect(0,0,canvas.width,canvas.height);
+  drawGrid('lightgray',10,10);
+  saveDrawingSurface();
+  con.strokeStyle = strokeStyleSelect.value;
+  con.fillStyle = fillCheckbox.value;
+}
+
+
+//绘制网格
+function drawGrid(color,stepx,stepy){
+  con.save();
+  con.strokeStyle = color;
+  con.lineWidth = 0.5;
+
+  for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+    con.beginPath();
+    con.moveTo(i,0);
+    con.lineTo(i,canvas.height);
+    con.stroke();
+  }
+
+  for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+    con.beginPath();
+    con.moveTo(0,i);
+    con.lineTo(canvas.width,i);
+    con.stroke();
+  }
+  con.restore();
+}
+drawGrid('lightgray',10,10);
+
+
+//窗口坐标转换为canvas坐标
+function windowToCanvas(x,y){
+  let bbox = canvas.getBoundingClientRect();
+  return {
+    x:x-bbox.left*(canvas.width / bbox.width),
+    y:y-bbox.top*(canvas.height / bbox.height)
+  }
+}
+
+//保留当前画布ImageData
+function saveDrawingSurface() {
+  drawingSurfaceImageData = con.getImageData(0,0,canvas.width,canvas.height)
+}
+//把上一步保留的ImageData绘制到画布上
+function restoreDrawingSurface(){
+  con.putImageData(drawingSurfaceImageData,0,0);
+}
+
+
+
+// 绘制圆
+function drawArc(loc) {
+  let redius = Math.sqrt((loc.x-mousedown.x)*(loc.x-mousedown.x) + (loc.y- mousedown.y)*(loc.y- mousedown.y));
+  con.beginPath();
+  con.arc(mousedown.x,mousedown.y,redius,0,Math.PI*2);
+  con.stroke();
+
+  if(isFill.checked){
+    con.fill();
+  }
+}
+
+
+// 绘制局部clip路径
+function drawClipPath(loc){
+  calcRect(loc);
+  con.beginPath();
+  con.rect(rectShape.x,rectShape.y,rectShape.width,rectShape.height);
+  con.clip();
+
+  con.save()
+  con.fillStyle="#fff"
+  con.fillRect(0,0,canvas.width,canvas.height)
+  con.restore()
+}
+
+// 计算矩形
+function calcRect(loc){
+    if(mousedown.x <= loc.x){
+        rectShape.x = mousedown.x
+    }else{
+        rectShape.x = loc.x
+    }
+    if(mousedown.y <= loc.y){
+        rectShape.y = mousedown.y
+    }else{
+        rectShape.y = loc.y
+    }
+    rectShape.width = Math.abs(mousedown.x - loc.x);
+    rectShape.height = Math.abs(mousedown.y - loc.y);
+}
+
+// 执行橡皮擦
+function drawEraser(loc){
+  con.save();
+  drawClipPath(loc);
+  drawGrid('lightgray',10,10);
+  con.restore();
+}
+// 填充矩形
+function fillRect(loc){
+    calcRect(loc);
+    con.beginPath();
+    con.save();
+    con.fillStyle = 'rgba(25,130,255,0.2)';
+    con.rect(rectShape.x,rectShape.y,rectShape.width,rectShape.height);
+    con.fill();
+    con.restore();
+}
+
+
+
+
+//事件
+canvas.onmousedown = function(e){
+  let loc = windowToCanvas(e.clientX,e.clientY);
+  e.preventDefault();
+
+  saveDrawingSurface();
+  mousedown.x = loc.x;
+  mousedown.y = loc.y;
+
+  windowMouseup.x = loc.x;
+  windowMouseup.y = loc.y;
+
+  dragging = true;
+}
+
+canvas.onmousemove = function (e) {
+  let loc = windowToCanvas(e.clientX,e.clientY);
+
+  if(dragging){
+    e.preventDefault();
+    restoreDrawingSurface();//相当于擦除过程中图形
+   
+    if(!isEraserCheckbox.checked){
+        drawArc(loc);
+    }else{
+        windowMouseup.x = loc.x;
+        windowMouseup.y = loc.y;
+        fillRect(loc);
+    }
+  }
+}
+
+canvas.onmouseup = function (e) {
+    let loc = windowToCanvas(e.clientX,e.clientY);
+    if(dragging){
+        if(!isEraserCheckbox.checked){
+            restoreDrawingSurface();//相当于擦除过程中的线段
+            drawArc(loc);
+        }else{
+            drawEraser(loc);
+        }
+        dragging = false;
+    }
+  
+  
+}
+
+window.onmouseup = function (e) {
+    if(dragging){
+        if(isEraserCheckbox.checked){
+            drawEraser(windowMouseup);
+        }
+        dragging = false;
+    }
+}
+
+
+
+
+
+</script>
+</html>

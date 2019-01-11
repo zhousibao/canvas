@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        margin: 10px;
+        padding: 10px;
+        background: #fff;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+    <canvas id="canvas" width="600" height="600">
+        Canvas not supported
+    </canvas>
+
+</body>
+<script>
+    var canvas = document.getElementById('canvas'),
+        con = canvas.getContext('2d');
+
+
+    function drawGrid(color,stepx,stepy){
+        con.strokeStyle = color;
+        con.lineWidth = 0.5;
+
+        for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+            con.beginPath();
+            con.moveTo(i,0);
+            con.lineTo(i,canvas.height);
+            con.stroke();
+        }
+
+        for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+            con.beginPath();
+            con.moveTo(0,i);
+            con.lineTo(canvas.height,i);
+            con.stroke();
+        }
+    }
+    drawGrid('lightgray',10,10);
+
+
+    var axis_margin = 40,
+
+        //坐标圆点
+        axis_origin = {
+            x:axis_margin,
+            y:canvas.height - axis_margin
+        },
+        axis_top = axis_margin,
+        axis_right = canvas.width - axis_margin,
+
+        horizontal = 10,//坐标单位
+        vertical = 10,//坐标单位
+
+        axis_width = axis_right - axis_origin.x,
+        axis_height = axis_origin.y - axis_top,
+
+
+        num_vertical = axis_height/vertical,
+        num_horizontal = axis_width/horizontal,
+
+        tick_width = 10,
+        tick_linewidth = 0.5,
+        tick_color = 'navy',
+
+        axis_linewidth = 1,
+        axis_color = 'blue';
+
+
+
+
+    drawAxes();
+    function drawAxes(){
+        con.save();
+        con.strokeStyle = axis_color;
+        con.lineWidth = axis_linewidth;
+
+        drawHorizontal();
+        drawVertical();
+
+        con.lineWidth = 0.5;
+        con.lineWidth = tick_linewidth;
+        con.strokeStyle = tick_color;
+
+
+        drawVerticalTicks();
+        drawHorizontalTicks();
+
+        con.restore();
+    }
+
+
+    //横坐标
+    function drawHorizontal(){
+        con.beginPath();
+        con.moveTo(axis_origin.x,axis_origin.y);
+        con.lineTo(axis_right,axis_origin.y);
+        con.stroke();
+        console.log('横坐标');
+    }
+
+    //纵坐标
+    function drawVertical(){
+        con.beginPath();
+        con.moveTo(axis_origin.x,axis_origin.y);
+        con.lineTo(axis_origin.x,axis_top);
+        con.stroke();
+        console.log('纵坐标');
+    }
+
+    //纵坐标数字
+    function drawVerticalTicks() {
+        var deltaX;
+
+        for(let i=1; i<num_vertical;i++){
+            con.beginPath();
+
+            if(i%5 === 0){
+                deltaX = tick_width;
+            }else{
+                deltaX = tick_width/2;
+            }
+
+            con.moveTo(axis_origin.x - deltaX , axis_origin.y - i * vertical);
+            con.lineTo(axis_origin.x + deltaX , axis_origin.y - i * vertical);
+            con.stroke();
+        }
+
+        console.log('纵坐标数字');
+    }
+    //横坐标数字
+    function drawHorizontalTicks() {
+        var deltaY;
+
+        for(let i=1; i<num_horizontal;i++){
+            con.beginPath();
+
+            if(i%5 === 0){
+                deltaY = tick_width;
+            }else{
+                deltaY = tick_width/2;
+            }
+
+            con.moveTo(axis_origin.x + i * horizontal , axis_origin.y - deltaY);
+            con.lineTo(axis_origin.x + i * horizontal , axis_origin.y + deltaY);
+            con.stroke();
+        }
+
+        console.log('横坐标数字');
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</script>
+</html>

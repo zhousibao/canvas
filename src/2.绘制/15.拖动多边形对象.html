@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        background: #fff;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+<div id="controls">
+    Stroke color:
+    <select id="strokeStyle">
+        <option value="red" selected>red</option>
+        <option value="green">green</option>
+        <option value="blue">blue</option>
+        <option value="orange">orange</option>
+    </select>
+
+
+    Fill color:
+    <select id="fillCheckbox">
+        <option value="red" selected>red</option>
+        <option value="green">green</option>
+        <option value="blue">blue</option>
+        <option value="orange">orange</option>
+    </select>
+
+    isFill:
+    <input id="isFill" type="checkbox" checked/>
+
+    <input id="clear" type="button" value="清除">
+
+
+    Sides:
+    <select id="Sides">
+        <option value="3" selected>3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+    </select>
+
+    StartAngle:
+    <select id="StartAngle">
+        <option value="0" selected>0</option>
+        <option value="45">45</option>
+        <option value="60">60</option>
+        <option value="90">90</option>
+    </select>
+
+    Edit:
+    <input id="edit" type="checkbox"/>
+</div>
+
+<canvas id="canvas" width="1000" height="600">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+var canvas = document.getElementById('canvas'),
+    con = canvas.getContext('2d');
+
+var strokeStyleSelect = document.getElementById('strokeStyle');
+var fillCheckbox = document.getElementById('fillCheckbox');
+var isFill = document.getElementById('isFill');
+var clear = document.getElementById('clear');
+var edit = document.getElementById('edit');
+
+var sidesSelect = document.getElementById('Sides');
+var startAngleSelect = document.getElementById('StartAngle');
+
+var mousedown = {},
+    drawingSurfaceImageData,
+    dragging = false,
+    draggingOffsetX,
+    draggingOffsetY,
+    polygons = [], //多边形集合
+    isEdit = false;
+
+
+//初始化
+canvas.style.cursor = 'crosshair';
+con.strokeStyle = strokeStyleSelect.value;
+con.fillStyle = fillCheckbox.value;
+//切换strokeStyle
+strokeStyleSelect.onchange = function(){
+    con.strokeStyle = strokeStyleSelect.value;
+}
+//切换fillStyle
+fillCheckbox.onchange = function(){
+    con.fillStyle = fillCheckbox.value;
+}
+// 清空
+clear.onclick = function(){
+    con.clearRect(0,0,canvas.width,canvas.height);
+    drawGrid('lightgray',10,10);
+    saveDrawingSurface();
+    con.strokeStyle = strokeStyleSelect.value;
+    con.fillStyle = fillCheckbox.value;
+}
+// 切换编辑与绘图
+edit.onchange = function(){
+    isEdit = edit.checked;
+    if(isEdit){
+        canvas.style.cursor = 'pointer';
+    }else{
+        canvas.style.cursor = 'crosshair';
+    }
+}
+
+
+//绘制网格
+function drawGrid(color,stepx,stepy){
+    con.save();
+    con.strokeStyle = color;
+    con.lineWidth = 0.5;
+
+    for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+        con.beginPath();
+        con.moveTo(i,0);
+        con.lineTo(i,canvas.height);
+        con.stroke();
+    }
+
+    for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+        con.beginPath();
+        con.moveTo(0,i);
+        con.lineTo(canvas.width,i);
+        con.stroke();
+    }
+    con.restore();
+}
+drawGrid('lightgray',10,10);
+
+
+
+//窗口坐标转换为canvas坐标
+function windowToCanvas(x,y){
+    let bbox = canvas.getBoundingClientRect();
+    return {
+        x:x-bbox.left*(canvas.width / bbox.width),
+        y:y-bbox.top*(canvas.height / bbox.height)
+    }
+}
+
+//保留当前画布ImageData
+function saveDrawingSurface() {
+    drawingSurfaceImageData = con.getImageData(0,0,canvas.width,canvas.height)
+}
+//把上一步保留的ImageData绘制到画布上
+function restoreDrawingSurface(){
+    con.putImageData(drawingSurfaceImageData,0,0);
+}
+
+
+
+/*点*/
+var Point = function(x,y){
+    this.x = x;
+    this.y = y;
+}
+/* 多边形 constructor */
+var Polygon = function(x,y,radius,sides,startAngle,strokeStyle,fillStyle,filled){
+    this.x = x;
+    this.y = y;
+    this.radius = radius;
+    this.sides = sides;
+    this.startAngle = startAngle;
+    this.strokeStyle = strokeStyle;
+    this.fillStyle = fillStyle;
+}
+// Polygon prototype
+Polygon.prototype = {
+    //获取所有点
+    getPoints:function(){
+        let points = [],
+        angle = this.startAngle || 0;
+        for(let i=0; i<this.sides; i++){
+            points.push(new Point(this.x + this.radius*Math.sin(angle),this.y - this.radius*Math.cos(angle)));
+            angle += 2*Math.PI/this.sides;
+        }
+        return points;
+    },
+    //链接所有点
+    createPath: function(con){
+        let points = this.getPoints();
+
+        con.beginPath();
+        con.moveTo(points[0].x,points[0].y);
+        for(let i =1; i<this.sides; i++){
+            con.lineTo(points[i].x,points[i].y)
+        }
+        con.closePath();
+    },
+    stroke: function(con){
+        con.save();
+        this.createPath(con);
+        con.strokeStyle = this.strokeStyle;
+        con.stroke();
+        con.restore();
+    },
+    fill: function(con){
+        con.save();
+        this.createPath(con);
+        con.fillStyle = this.fillStyle;
+        con.fill();
+        con.restore();
+    },
+    move: function(x,y){
+        this.x = x;
+        this.y = y;
+    }
+}
+
+// 绘制多边形
+function drawRubberbandShape(loc){
+    const radius = Math.max(Math.abs(loc.x - mousedown.x),Math.abs(loc.y - mousedown.y));
+    var polygon = new Polygon(
+            mousedown.x,
+            mousedown.y,
+            radius,
+            parseInt(sidesSelect.value),
+            (Math.PI/180)*parseInt(startAngleSelect.value),
+            con.strokeStyle,
+            con.fillStyle
+        );
+
+    drawPolygon(polygon)
+    if(!dragging){
+        polygons.push(polygon);
+    }
+    
+}
+// 绘制多边形
+function drawPolygon(polygon){
+    polygon.stroke(con);
+    if(isFill.checked){
+        polygon.fill(con);
+    }
+}
+
+// 绘制多边形集合
+function drawPolygons(){
+    polygons.forEach(function(polygon){
+        drawPolygon(polygon)
+    })
+}
+
+// 拖拽
+function startDragging(loc){
+    saveDrawingSurface();
+    mousedown.x = loc.x;
+    mousedown.y = loc.y;
+}
+
+
+
+//事件
+canvas.onmousedown = function(e){
+    let loc = windowToCanvas(e.clientX,e.clientY);
+    e.preventDefault();
+
+    if(isEdit){
+        polygons.forEach(function(polygon){
+            polygon.createPath(con);
+            if(con.isPointInPath(loc.x,loc.y)){
+                startDragging(loc);
+                dragging = polygon;
+                draggingOffsetX = loc.x - polygon.x;
+                draggingOffsetY = loc.y - polygon.y;
+                return; // return 的目的是当图形覆盖的时候，只移动后绘制的图形。
+            }
+        })
+    }else{
+        saveDrawingSurface();
+        mousedown.x = loc.x;
+        mousedown.y = loc.y;
+        dragging = true;
+    }
+    
+}
+canvas.onmousemove = function (e) {
+    let loc = windowToCanvas(e.clientX,e.clientY);
+    e.preventDefault();
+    if(isEdit && dragging){
+        dragging.x = loc.x - draggingOffsetX;
+        dragging.y = loc.y - draggingOffsetY;
+        con.clearRect(0,0,canvas.width,canvas.height);
+        drawGrid('lightgray',10,10);
+        drawPolygons();
+    }else{
+        if(dragging){
+            restoreDrawingSurface();//相当于擦除过程中的线段
+            drawRubberbandShape(loc);
+        }
+    }
+
+    
+}
+canvas.onmouseup = function (e) {
+    let loc = windowToCanvas(e.clientX,e.clientY);
+    dragging = false;
+    if(!isEdit){
+        restoreDrawingSurface();//相当于擦除过程中的最后一次线段
+        drawRubberbandShape(loc);
+    }
+
+}
+
+
+
+
+
+
+</script>
+</html>

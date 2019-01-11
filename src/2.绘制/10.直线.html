@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        background: #fff;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+<div id="controls">
+    Stroke color:
+    <select id="strokeStyle">
+        <option value="red" selected>red</option>
+        <option value="green">green</option>
+        <option value="blue">blue</option>
+        <option value="orange">orange</option>
+    </select>
+
+    Guidewires:
+    <input id="guidewireCheckbox" type="checkbox" checked/>
+
+    <input id="clear" type="button" value="清除">
+</div>
+
+<canvas id="canvas" width="600" height="600">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+    var canvas = document.getElementById('canvas'),
+        con = canvas.getContext('2d');
+
+    var strokeStyleSelect = document.getElementById('strokeStyle');
+    var guidewireCheckbox = document.getElementById('guidewireCheckbox');
+    var clear = document.getElementById('clear');
+    var mousedown = {},
+        drawingSurfaceImageData,
+        dragging = false,
+        guidewires = guidewireCheckbox.checked;
+
+    //初始化
+    con.strokeStyle = strokeStyleSelect.value;
+    //切换strokeStyle
+    strokeStyleSelect.onchange = function(){
+        con.strokeStyle = strokeStyleSelect.value;
+    }
+    guidewireCheckbox.onchange = function(){
+        guidewires = guidewireCheckbox.checked;
+    }
+    clear.onclick = function(){
+        con.clearRect(0,0,canvas.width,canvas.height);
+        drawGrid('lightgray',10,10);
+        saveDrawingSurface();
+        con.strokeStyle = strokeStyleSelect.value;
+    }
+
+
+    //绘制网格
+    function drawGrid(color,stepx,stepy){
+        con.save();
+        con.strokeStyle = color;
+        con.lineWidth = 0.5;
+
+        for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+            con.beginPath();
+            con.moveTo(i,0);
+            con.lineTo(i,canvas.height);
+            con.stroke();
+        }
+
+        for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+            con.beginPath();
+            con.moveTo(0,i);
+            con.lineTo(canvas.width,i);
+            con.stroke();
+        }
+        con.restore();
+    }
+    drawGrid('lightgray',10,10);
+
+
+    //窗口坐标转换为canvas坐标
+    function windowToCanvas(x,y){
+        let bbox = canvas.getBoundingClientRect();
+        return {
+            x:x-bbox.left*(canvas.width / bbox.width),
+            y:y-bbox.top*(canvas.height / bbox.height)
+        }
+    }
+
+    //保留当前画布ImageData
+    function saveDrawingSurface() {
+        drawingSurfaceImageData = con.getImageData(0,0,canvas.width,canvas.height)
+    }
+    //把上一步保留的ImageData绘制到画布上
+    function restoreDrawingSurface(){
+        con.putImageData(drawingSurfaceImageData,0,0);
+    }
+
+
+    
+
+
+    function drawRubberbandShape(loc) {
+        con.beginPath();
+        con.moveTo(mousedown.x,mousedown.y);
+        con.lineTo(loc.x,loc.y);
+        con.stroke();
+    }
+
+    //事件
+    canvas.onmousedown = function(e){
+        let loc = windowToCanvas(e.clientX,e.clientY);
+        e.preventDefault();
+
+        saveDrawingSurface();
+        mousedown.x = loc.x;
+        mousedown.y = loc.y;
+
+        dragging = true;
+    }
+
+    canvas.onmousemove = function (e) {
+        let loc = windowToCanvas(e.clientX,e.clientY);
+
+        if(dragging){
+            e.preventDefault();
+
+            restoreDrawingSurface();//相当于擦除过程中的线段
+            drawRubberbandShape(loc);
+
+            if(guidewires){
+                drawGuidewires(loc.x,loc.y);
+            }
+        }
+    }
+
+    canvas.onmouseup = function (e) {
+        let loc = windowToCanvas(e.clientX,e.clientY);
+
+        restoreDrawingSurface();//相当于擦除过程中的最后一次线段
+        drawRubberbandShape(loc);
+        dragging = false;
+
+    }
+
+
+
+    //鼠标辅助线
+    function drawHorizontalLine(y){
+        con.beginPath();
+        con.moveTo(0,y+0.5);
+        con.lineTo(canvas.width,y+0.5);
+        con.stroke();
+    }
+    function drawVerticlaLine(x) {
+        con.beginPath();
+        con.moveTo(x+0.5,0);
+        con.lineTo(x+0.5,canvas.height);
+        con.stroke();
+    }
+    function drawGuidewires(x,y){
+        con.save();
+        con.strokeStyle = 'rgba(0,0,230,0.4)';
+        con.lineWidth = 0.5;
+        drawVerticlaLine(x);
+        drawHorizontalLine(y);
+        con.restore();
+    }
+
+
+
+
+</script>
+</html>

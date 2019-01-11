@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:thin inset #aaa;
+}
+#container{
+  width: 600px;
+  height: 600px;
+  position:relative;
+}
+</style>
+<body>
+  <div id="container">
+    <canvas id="canvas" width="600" height="600">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+var container = document.getElementById('container');
+var canvas = document.getElementById('canvas'),
+  con = canvas.getContext('2d');
+  con.textAlign = 'start';
+  con.textBaseLine = 'bottom';
+
+// 坐标转换函数
+function windowToCanvas(canvas,x,y){
+  var box = canvas.getBoundingClientRect();
+  //console.log(box);
+
+  const data = { 
+    x:Math.ceil((x-box.left)*(canvas.width/box.width)),
+    y:Math.ceil((y-box.top)*(canvas.height/box.height))
+  }
+  return data
+}
+
+var cantextarea = true;
+var point = {};
+var h = con.measureText('W').width;
+var minH = Math.ceil(h+ h/2);
+
+// 事件
+canvas.onmousedown = function(e){
+  if(cantextarea){
+    let loc = windowToCanvas(canvas,e.clientX,e.clientY);
+    console.log(loc)
+    point = loc
+    let textarea = document.createElement("textarea");
+    textarea.id='textarea';
+    textarea.rows= 3;
+    textarea.style.position = 'absolute'
+    textarea.style.left = loc.x + 'px'
+    textarea.style.top = loc.y + 'px'
+    textarea.style.zIndex = '10'
+
+    container.appendChild(textarea);
+    cantextarea = false;
+
+  }else{
+
+    let textarea = document.getElementById("textarea");
+    console.log(textarea.value)
+    let arr = textarea.value.split('\n')
+    console.log(arr)
+    for(let i=0; i<arr.length; i++){
+      if(arr[i]){
+        con.strokeText(arr[i], point.x, point.y + minH*i)
+      }
+      
+    }
+    //con.strokeText(textarea.value,point.x,point.y)
+    
+    container.removeChild(textarea);
+    cantextarea = true;
+
+    
+  }
+  
+
+
+  
+}
+
+
+
+</script>
+</html>

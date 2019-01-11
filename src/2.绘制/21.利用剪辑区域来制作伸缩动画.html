@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        margin: 10px;
+        padding: 10px;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+  <canvas id="canvas" width="600" height="600">
+      Canvas not supported
+  </canvas>
+
+</body>
+<script>
+/**
+
+ */
+var canvas = document.getElementById('canvas'),
+con = canvas.getContext('2d');
+con.lineWidth = 0.5;
+con.font = '128pt Comic-sans';
+
+// 绘制文字
+function drawText(){
+  con.save();
+  con.shadowColor = 'rgba(100,100,150,0.8';
+  con.shadowOffsetX = 5;
+  con.shadowOffsetY = 5;
+  con.shadowBlur = 10;
+
+  con.fillStyle = 'cornflowerblue';
+  con.fillText('HTML5',20,250);
+  con.strokeStyle = 'yellow';
+  con.strokeText('HTML5',20,250);
+  con.restore();
+}
+
+function setClippingRegion(radius){
+  con.beginPath();
+  con.arc(canvas.width/2,canvas.height/2,radius,0,Math.PI*2,false);
+  con.clip();
+}
+function fillCanvas(color){
+  con.fillStyle = color;
+  con.fillRect(0,0,canvas.width,canvas.height);
+}
+
+
+
+function drawAnimationFrame(radius){
+  setClippingRegion(radius);
+  fillCanvas('lightgray');
+  drawText();
+}
+
+// 过程动画
+function animate(){
+  var radius = canvas.width/2;
+  var loop;
+  loop = window.setInterval(function(){
+    radius -= canvas.width/100;
+
+    fillCanvas('charcoal');
+    if(radius >= 0){
+      con.save();
+      drawAnimationFrame(radius);
+      con.restore();
+    }else{
+      endAnimation(loop);
+    }
+
+  },20);
+}
+
+// 结束动画
+function endAnimation(loop){
+  clearInterval(loop);
+
+  setTimeout(function(e){
+    con.clearRect(0,0,canvas.width,canvas.height);
+    drawText();
+  },100);
+}
+
+
+canvas.onmousedown = function(e){
+  animate();
+}
+
+
+
+</script>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        margin: 10px;
+        padding: 10px;
+        background: #fff;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+<canvas id="canvas" width="800" height="800">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+/**
+
+ * 
+ */    
+var canvas = document.getElementById('canvas'),
+con = canvas.getContext('2d');
+//console.log(context)
+
+var image = new Image();
+image.src = 'aaa.jpg';
+con.font = '188px Palatino';
+con.strokeStyle = 'cornflowerblue';
+
+con.shadowColor = 'rgba(100,100,150,0.8)';
+con.shadowOffsetX = 5;
+con.shadowOffsetY = 5;
+con.shadowBlur = 10;
+
+
+var gradient = con.createLinearGradient(0,0,canvas.width,canvas.height);
+gradient.addColorStop(0,'blue');
+gradient.addColorStop(0.25,'blue');
+gradient.addColorStop(0.5,'white');
+gradient.addColorStop(0.75,'red');
+gradient.addColorStop(1,'yellow');
+
+
+var text = 'Canvas';
+var pattern;
+
+function drawGradientText(){
+  con.fillStyle = gradient;
+  con.fillText(text,35,200);
+  con.strokeText(text,35,200);
+}
+
+function drawPatternText(){
+  con.fillStyle = pattern;
+  con.fillText(text,35,450);
+  con.strokeText(text,35,450);
+}
+
+
+image.onload = function(e){
+  pattern = con.createPattern(image,'repeat');
+  drawPatternText();
+}
+
+drawGradientText();
+
+
+
+
+
+
+
+
+
+
+</script>
+</html>

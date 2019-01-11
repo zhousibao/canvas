@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    .con{
+        margin: 10px auto;
+        width: 600px;
+        height: 600px;
+        border: 1px solid #3A3A3A;
+    }
+    #canvas{
+        background: #fff;
+    }
+</style>
+<body>
+<div class="con">
+    <canvas id="canvas" width="600" height="600">
+        Canvas not supported
+    </canvas>
+</div>
+
+
+</body>
+<script>
+    var canvas = document.getElementById('canvas'),
+        con = canvas.getContext('2d');
+
+
+
+    //参数
+
+    var
+
+        //仪表盘最小中心圆样式
+        CENTROID_RADIUS = 10,
+        CENTROID_STROKE_STYLE = 'rgba(0,0,0,0.5)',
+        CENTROID_FILL_STYLE = 'rgba(80,190,240,0.6)',
+
+        RING_INNER_RADIUS = 35,
+        RING_OUTER_RADIUS = 55,
+
+        ANNOTATIONS_FILL_STYLE = 'rgba(0,0,230,0.9)',
+        ANNOTATIONS_TEXT_SIZE = 12,
+
+        TICK_WIDTH = 10,
+        TICK_LONG_STROKE_STYLE = 'rgba(100,140,230,0.9)',
+        TICK_SHORT_STROKE_STYLE = 'rgba(100,140,230,0.7)',
+
+        TRACKING_DIAL_STROKING_STYLE = 'rgba(100,140,230,0.5)',
+
+        GUIDEWIRE_STROKE_STYLE = 'goldenrod',
+        GUIDEWIRE_FILL_STYLE = 'rgba(250,250,0,0.6)',
+
+        circle = {
+            x:canvas.width/2,
+            y:canvas.height/2,
+            radius:150
+        };
+
+    //初始化
+    con.shadowBlur = 4;
+    con.shadowOffsetX = 2;
+    con.shadowOffsetY = 2;
+    con.shadowColor = 'rgba(0,0,0,0,4)';
+
+    con.textAlign = 'center';
+    con.textBaseline = 'middle';
+    drawGrid('lightgray',10,10);
+    drawDial();
+
+    //绘制表格
+    function drawGrid(color,stepx,stepy){
+        con.save();
+        con.shadowColor = undefined;
+        con.shadowOffsetX =0;
+        con.shadowOffsetY = 0;
+        con.strokeStyle = color;
+        con.fillStyle = '#ffffff';
+        con.lineWidth = 0.5;
+
+        con.fillRect(0,0,canvas.width,canvas.height);
+
+
+
+
+        for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+            con.beginPath();
+            con.moveTo(i,0);
+            con.lineTo(i,canvas.height);
+            con.stroke();
+        }
+
+        for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+            con.beginPath();
+            con.moveTo(0,i);
+            con.lineTo(canvas.height,i);
+            con.stroke();
+        }
+
+        con.restore();
+    }
+
+    //绘制仪表盘
+    function drawDial(){
+        var loc = {
+            x: circle.x,
+            y:circle.y
+        }
+
+
+        drawCentroid();
+        drawCentroidGuidewire(loc);
+        drawRing();
+        drawTickInnerCircle();
+        drawTicks();
+        drawAnnotations();
+    }
+
+    //绘制最小圆，  仪表盘中心点
+    function drawCentroid() {
+        con.beginPath();
+        con.save();
+        con.strokeStyle = CENTROID_STROKE_STYLE;
+        con.fillStyle = CENTROID_FILL_STYLE;
+        con.arc(circle.x,circle.y,CENTROID_RADIUS,0,Math.PI*2,false);
+        con.stroke();
+        con.fill();
+        con.restore();
+    }
+
+    //绘制仪表盘指针和指针顶端小圆
+    function drawCentroidGuidewire(loc) {
+        let angle = -Math.PI/4,
+            radius,
+            endpt;
+
+        radius = circle.radius + RING_OUTER_RADIUS;
+
+        if(loc.x >= circle.x){
+            endpt = {
+                x:circle.x + radius*Math.cos(angle),
+                y:circle.y + radius*Math.sin(angle)
+            };
+        }else{
+            endpt = {
+                x:circle.x - radius*Math.cos(angle),
+                y:circle.y - radius*Math.sin(angle)
+            };
+        }
+
+        con.save();
+        con.strokeStyle = GUIDEWIRE_STROKE_STYLE;
+        con.fillStyle = GUIDEWIRE_FILL_STYLE;
+
+        con.beginPath();
+        con.moveTo(circle.x,circle.y);
+        con.lineTo(endpt.x,endpt.y);
+        con.stroke();
+
+        con.beginPath();
+        con.strokeStyle = TICK_LONG_STROKE_STYLE;
+        con.arc(endpt.x,endpt.y,5,0,Math.PI*2,false);
+        con.fill();
+        con.stroke();
+
+        con.restore();
+    }
+
+    //绘制仪表盘最外圈
+    function drawRing() {
+        drawRingOuterCircle();
+        con.beginPath();
+        con.strokeStyle = 'rgba(0,0,0,0.1)';
+        con.arc(circle.x,circle.y,circle.radius+RING_OUTER_RADIUS,0,Math.PI*2,false);
+
+        con.fillStyle = 'rgba(100,140,230,0.1)';
+        con.fill();
+        con.stroke();
+    }
+    //绘制仪表盘最外圈阴影
+    function drawRingOuterCircle() {
+        con.shadowColor = 'rgba(0,0,0,0.7)';
+        con.shadowOffsetX = 3;
+        con.shadowOffsetY = 3;
+        con.shadowBlur = 6;
+        con.strokeStyle = TRACKING_DIAL_STROKING_STYLE;
+
+        con.beginPath();
+        con.arc(circle.x,circle.y,circle.radius+RING_OUTER_RADIUS,0,Math.PI*2,true);
+        con.stroke();
+    }
+
+    //绘制仪表盘数字刻度圆
+    function drawTickInnerCircle() {
+        con.save();
+        con.beginPath();
+        con.strokeStyle = 'rgba(0,0,0,0.1)';
+        con.arc(circle.x,circle.y,circle.radius+RING_INNER_RADIUS,0,Math.PI*2,false);
+        con.stroke();
+        con.restore();
+    }
+    
+    //绘制刻度
+    function drawTick(angle,radius,cnt) {
+        var tickWidth = cnt%4 === 0 ? TICK_WIDTH : TICK_WIDTH/2;
+
+        con.beginPath();
+        con.moveTo(
+            circle.x + Math.cos(angle) * (radius -tickWidth),
+            circle.y + Math.sin(angle) * (radius -tickWidth)
+        );
+        con.lineTo(
+            circle.x + Math.cos(angle) * (radius),
+            circle.y + Math.sin(angle) * (radius)
+        );
+
+        con.strokeStyle = TICK_SHORT_STROKE_STYLE;
+        con.stroke();
+    }
+
+    function drawTicks(){
+        let radius = circle.radius + RING_INNER_RADIUS,
+            ANGLE_MAX = 2*Math.PI,
+            ANGLE_DELTA = Math.PI/64;
+
+        con.save();
+
+        for(let angle = 0, cnt = 0; angle<ANGLE_MAX; angle+=ANGLE_DELTA,cnt++){
+            drawTick(angle,radius,cnt++)
+        }
+
+        con.restore();
+
+    }
+
+    //绘制仪表盘数字
+    function drawAnnotations() {
+        let radius = circle.radius + RING_INNER_RADIUS;
+        con.save();
+        con.fillStyle = ANNOTATIONS_FILL_STYLE;
+        con.font = ANNOTATIONS_TEXT_SIZE + 'px Helvetica';
+
+        for(let angle=0; angle< Math.PI*2; angle += Math.PI/8){
+            con.beginPath();
+            con.fillText(
+                (angle*180/Math.PI).toFixed(0),
+                circle.x + Math.cos(angle)*(radius - TICK_WIDTH*2),
+                circle.y + Math.sin(angle)*(radius - TICK_WIDTH*2)
+            );
+        }
+        con.restore();
+    }
+
+
+
+
+
+
+
+
+</script>
+</html>

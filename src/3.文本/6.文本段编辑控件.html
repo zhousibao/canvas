@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  margin: 10px;
+  padding: 10px;
+  background: #fff;
+  border:thin inset #aaa;
+}
+</style>
+<body>
+  <div id="control">
+    Font:
+    <select id="fontSelect">
+      <option value="Lucida">Lucida</option>
+      <option value="sans-serif" selected>sans-serif</option>
+    </select>
+
+    Size:
+    <select id="sizeSelect">
+      <option value="16px">16px</option>
+      <option value="32px">32px</option>
+      <option value="64px" selected>64px</option>
+      <option value="128px">128px</option>
+    </select>
+
+    Fill Color:
+    <select id="fillColorSelect">
+      <option value="red" selected>red</option>
+      <option value="blue">blue</option>
+      <option value="green">green</option>
+      <option value="black">black</option>
+    </select>
+
+  </div>
+  <canvas id="canvas" width="800" height="800">
+    Canvas not supported
+  </canvas>
+</body>
+<script>
+  /**
+    注意保持像素未整数
+  */
+var canvas = document.getElementById('canvas'),
+  con = canvas.getContext('2d');
+var drawingSurfaceImageData; // 当前画布ImageData
+var blinkingInterval; // 闪烁时间定时器
+var isBlink = false; // 是否存在
+
+var fontSelect = document.getElementById('fontSelect');
+var sizeSelect = document.getElementById('sizeSelect');
+var fillColorSelect = document.getElementById('fillColorSelect');
+
+// 初始化
+con.font = `${sizeSelect.value} ${fontSelect.value}`;
+con.fillStyle = fillColorSelect.value;
+con.lineWidth = 2;
+
+
+// 切换字体
+fontSelect.onchange = function(){
+  con.font = `${sizeSelect.value} ${fontSelect.value}`;
+}
+// 切换字体大小
+sizeSelect.onchange = function(){
+  con.font =`${sizeSelect.value} ${fontSelect.value}`;
+}
+// 切换fillStyle
+fillColorSelect.onchange = function(){
+  con.fillStyle = fillColorSelect.value;
+}
+
+// 坐标转换函数
+function windowToCanvas(x,y){
+  var box = canvas.getBoundingClientRect();
+  //console.log(box);
+
+  const data = { 
+    x:Math.ceil((x-box.left)*(canvas.width/box.width)),
+    y:Math.ceil((y-box.top)*(canvas.height/box.height))
+  }
+  return data
+}
+//保留当前画布ImageData
+function saveDrawingSurface() {
+  drawingSurfaceImageData = con.getImageData(0,0,canvas.width,canvas.height)
+}
+
+// 绘制表格
+function drawGrid(color,stepx,stepy){
+  con.save();
+  con.strokeStyle = color;
+  con.lineWidth = 0.5;
+
+  for(var i = stepx + 0.5; i<canvas.width; i+=stepx){
+    con.beginPath();
+    con.moveTo(i,0);
+    con.lineTo(i,canvas.height);
+    con.stroke();
+  }
+
+  for(var i = stepy + 0.5; i<canvas.height; i+=stepy){
+    con.beginPath();
+    con.moveTo(0,i);
+    con.lineTo(canvas.height,i);
+    con.stroke();
+  }
+  con.restore()
+}
+drawGrid('lightgray',10,10);
+
+
+
+//创建光标对象
+var TextCursor = function (){
+  this.fillStyle = 'rgba(0,0,0,0.5)';
+  this.width = 2;
+  this.left = 0;
+  this.top = 0;
+}
+TextCursor.prototype = {
+  getHeight: function(con){
+    var h = con.measureText('W').width;
+    return Math.ceil(h+ h/6);
+  },
+  createPath: function(con){
+    con.beginPath();
+    con.rect(this.left,this.top,this.width,this.getHeight(con));
+  },
+  draw: function(con,left,bottom){
+    con.save();
+    this.left = left;
+    this.top = bottom - this.getHeight(con);
+
+    this.createPath(con);
+    con.fillStyle = this.fillStyle;
+    con.fill();
+    con.restore();
+  },
+  erase: function(con,imageData){
+    con.putImageData(imageData,0,0,this.left,this.top,this.width,this.getHeight(con))
+  }
+}
+
+
+//实现光标闪烁
+function blinkCursor(x,y){
+  clearInterval(blinkingInterval);
+
+  blinkingInterval = setInterval(function(e){
+    cursor.erase(con,drawingSurfaceImageData);
+    
+    setTimeout(function(e){
+      if(cursor.left === x && cursor.top + cursor.getHeight(con) === y ){
+        cursor.draw(con,x,y);
+      }
+    },300)
+  },1000)
+}
+function moveCursor(x,y){
+  cursor.erase(con,drawingSurfaceImageData); // 首次清空
+  saveDrawingSurface(); // 保留字体image信息
+  con.putImageData(drawingSurfaceImageData,0,0);
+
+  cursor.draw(con,x,y);
+  blinkCursor(x,y);
+}
+
+
+// 文本对象
+var TextLine = function(x,y){
+  this.text = '';
+  this.left = x;
+  this.bottom = y;
+  this.caret = 0;
+};
+TextLine.prototype = {
+  insert: function(text){
+    this.text = this.text.substr(0,this.caret) + text + this.text.substr(this.caret);
+    this.caret += text.length;
+  },
+  removeCharacterBeforeCaret: function(){
+    if(this.caret === 0 ) {
+      return;
+    }
+    this.text = this.text.substring(0,this.caret - 1) + this.text.substring(this.caret);
+    this.caret -- ;
+  },
+  getWidth: function(con){
+    return Math.ceil(con.measureText(this.text).width);
+  },
+  getHeight: function(con){
+    var h = con.measureText('W').width;
+    return Math.ceil(h + h/6)
+  },
+  draw: function(con){
+    con.save();
+    con.textAlign = 'start';
+    con.textBaseline = 'bottom';
+    con.fillText(this.text,this.left,this.bottom);
+    con.restore();
+  },
+  erase: function(con,imageData){
+    con.putImageData(imageData,0,0);
+  }
+}
+
+var cursor = new TextCursor();
+saveDrawingSurface();
+
+// 段落对象
+var Paragraph = function(con,left,top,imageData,cursor){
+  this.con = con;
+  this.drawingSurface = imageData;
+  this.left = left;
+  this.top = top;
+  this.lines = [];
+  this.activeLine = undefined;
+  this.cursor = cursor;
+  this.blinkingInterval = undefined;
+}
+
+
+var paragraph;
+var line;
+Paragraph.prototype = {
+  // 判断点是否在段落内
+  isPointInside: function(loc){
+    var c = this.con;
+    c.beginPath();
+    c.rect(this.left,this.top,this.getWidth(),this.getHeight());
+    return c.isPointInPath(loc.x,loc.y);
+  },
+  // 获取段落的高
+  getHeight: function(){
+    var h = 0;
+    this.lines.forEach(function(line){
+      h += line.getHeight(this.con);
+    });
+    return h;
+  },
+  // 获取段落的宽，即行的最大宽
+  getWidth: function(){
+    var w = 0;
+    var widest = 0;
+    this.lines.forEach(function(line){
+      w = line.getWidth(this.con);
+      if(w > widest){
+        widest = w;
+      }
+    });
+    return widest;
+  },
+  // 绘制段落
+  draw: function(){
+    this.lines.forEach(function(line){
+      line.draw(this.con)
+    });
+  },
+  // 橡皮檫
+  erase: function(con,imageData){
+    con.putImageData(imageData, 0, 0);
+  },
+  // 新添加一行
+  addLine: function(line){
+    this.lines.push(line);
+    this.activeLine = line;
+    this.moveCursor(line.left,line.bottom);
+  },
+  //
+  insert: function(text){
+    //this.erase(this.con,this.drawingSurface);
+    this.activeLine.insert(text);
+
+    var t = this.activeLine.text.substring(0,this.activeLine.caret);
+    var w = Math.ceil(this.con.measureText(t).width);
+
+    this.moveCursor(this.activeLine.left + w, this.activeLine.bottom);
+    this.activeLine.draw(this.con);
+  },
+  // 段落光标闪烁
+  blinkCursor: function(){
+    var self = this;
+    this.blinkingInterval = setInterval(function(e){
+      cursor.erase(con,self.drawingSurface);
+
+      setTimeout(function(e){
+        cursor.draw(con, cursor.left, cursor.top + cursor.getHeight(con))
+      },200);
+    },900);
+  },
+  //
+  moveCursorCloseTo: function(x,y){
+    var line = this.getLine(y);
+
+    if(line){
+      line.caret = this.getColumn(line,x);
+      this.activeLine = line;
+      this.moveCursor(line,getCaretX(con), line.bottom);
+    }
+  },
+  //
+  moveCursor: function(x, y){
+    this.cursor.erase(this.con,this.drawingSurface);
+    this.cursor.draw(this.con, x, y);
+    this.blinkCursor(x, y);
+  },
+  //
+  moveLinesDown: function(start){
+    for(var i = start; i<this.lines.length; ++i){
+      line = this.lines[i];
+      line.bottom += line.getHeight(this.con);
+    }
+  },
+  //
+  newLine: function(){
+    var textBeforeCursor = this.activeLine.text.substring(0,this.activeLine.caret);
+    var textAfterCursor = this.activeLine.text.substring(this.activeLine.caret);
+    var height = Math.ceil(this.con.measureText('W').width + this.con.measureText('W').width/6);
+    var bottom = this.activeLine.bottom + height;
+    var activeIndex;
+    var line;
+
+    this.erase(this.con, this.drawingSurface);
+    this.activeLine.text = textBeforeCursor;
+    
+    line = new TextLine(this.activeLine.left,bottom);
+    line.insert(textAfterCursor);
+
+    activeIndex = this.lines.indexOf(this.activeLine);
+    this.lines.splice(activeIndex + 1, 0, line);
+    
+    this.activeLine = line;
+    this.activeLine.caret = 0;
+
+    activeIndex = this.lines.indexOf(this.activeLine);
+
+    for(var i = activeIndex + 1; i< this.lines.length; i++){
+      line = this.lines[i];
+      line.bottom += height;
+    }
+    this.draw();
+    this.cursor.draw(this.con, this.activeLine.left, this.activeLine.bottom);
+  },
+  //
+  getLine: function(y){
+    var line;
+    for(var i=0; i<this.lines.length; i++){
+      line = this.lines[i];
+      if( y > line.bottom - line.getHeight(con) && y < line.bottom ){
+        return line;
+      }
+    }
+    return;
+  },
+  //
+  getColumn: function(){
+    var found = false;
+    var before;
+    var after;
+    var closest;
+    var tmpLine;
+    var column;
+
+    tmpLine = new TextLine(line.left,line.bottom);
+    tmpLine.insert(line.text);
+
+    while(!found && tmpLine.text.length > 0){
+      before = tmpLine.left + tmpLine.getWidth(con);
+      tmp.removeCharacterBeforeCaret();
+      after = tmpLine.left + tmpLine.getWidth(con);
+
+      if(after < x){
+        closest = x - after < before -x ? after : before;
+        column = closest === before ? tmpLine.text.length + 1 : tmpLine.text.length;
+        found = true;
+      }
+    }
+    return column;
+  },
+  //
+  activeLineIsOutOfText: function(){
+    return this.activeLine.text.length === 0;
+  },
+  //
+  activeLineIsTopLine: function(){
+    return this.lines[0] === this.activeLine;
+  },
+  //
+  moveUpOneLine: function(){
+    var lastActiveText;
+    var line;
+    var before;
+    var after;
+
+    lastActiveLine = this.activeLine;
+    lastActiveText = '' + lastActiveLine.text;
+
+    activeIndex = this.lines.indexOf(this.activeLine);
+    this.activeLine = this.lines[activeIndex - 1];
+    this.activeLine.caret = this.activeLine.text.length;
+
+    this.lines.splice(activeIndex,1);
+
+    this.moveCursor(this.activeLine.left + this.activeLine.getWidth(this.con), this.activeLine.bottom);
+    
+    this.activeLine.text += lastActiveText;
+
+    for(var i = activeIndex; i< this.lines.length; ++i){
+      line = this.lines[i];
+      line.bottom -= line.getHeight(this.con);
+    }
+  },
+  backspace: function(){
+    var lastActiveLine,
+    activeIndex,
+    t,
+    w;
+
+    this.con.save();
+    if(this.activeLine.caret === 0){
+      if(!this.activeLineIsTopLine()){
+        this.erase(this.con,this.drawingSurface);
+        this.moveUpOneLine();
+        this.draw();
+      }
+    }else{
+      this.erase(this.con,this.drawingSurface);
+      this.activeLine.removeCharacterBeforeCaret();
+      t = this.activeLine.text.slice(0,this.activeLine.caret);
+      w = Math.ceil(this.con.measureText(t).width)
+
+      this.moveCursor(this.activeLine.left + w, this.activeLine.bottom);
+      this.draw(this.con);
+    }
+    con.restore();
+
+  }
+}
+
+
+
+
+// 事件
+canvas.onmousedown = function(e){
+  let loc = windowToCanvas(e.clientX,e.clientY);
+  let fontHeight;
+
+  cursor.erase(con,drawingSurfaceImageData);
+  saveDrawingSurface();
+
+  if(paragraph && paragraph.isPointInside(loc)){
+    paragraph.moveCursorCloseTo(loc.x,loc.y);
+  }else{
+    fontHeight = Math.ceil(con.measureText('W').width + con.measureText('W').width/6);
+
+    paragraph = new Paragraph(con, loc.x, loc.y - fontHeight, drawingSurfaceImageData, cursor);
+    paragraph.addLine(new TextLine(loc.x,loc.y)) 
+  }
+}
+
+
+// 键盘事件
+document.onkeydown = function(e){
+  if(e.keyCode === 8 || e.keyCode === 13){
+    e.preventDefault();
+  }
+  if(e.keyCode === 8){
+    // con.save();
+    // line.erase(con,drawingSurfaceImageData);
+    // line.removeCharacterBeforeCaret();
+    // moveCursor(line.left + line.getWidth(con),line.bottom);
+    // line.draw(con);
+    // con.restore();
+    paragraph.backspace();
+  }
+  if(e.keyCode === 13){
+    paragraph.newLine();
+  }
+}
+document.onkeypress = function(e){
+  var key = String.fromCharCode(e.which);
+  if(e.keyCode !== 8 && !e.ctrlKey && !e.metaKey){
+    e.preventDefault();
+    
+    // con.save();
+    // line.erase(con,drawingSurfaceImageData);
+    // line.insert(key);
+
+    // moveCursor(line.left + line.getWidth(con),line.bottom);
+    // line.draw(con);
+    // con.restore();
+    paragraph.insert(key);
+  }
+}
+
+
+
+
+</script>
+</html>

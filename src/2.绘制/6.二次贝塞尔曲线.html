@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    .con{
+        margin: 10px auto;
+        width: 600px;
+        height: 600px;
+        border: 1px solid #3A3A3A;
+    }
+    #canvas{
+        background: #fff;
+    }
+</style>
+<body>
+<div class="con">
+    <canvas id="canvas" width="600" height="600">
+        Canvas not supported
+    </canvas>
+</div>
+
+
+</body>
+<script>
+    var canvas = document.getElementById('canvas'),
+        con = canvas.getContext('2d');
+
+    con.fillStyle = 'cornflowerblue';
+    con.strokeStyle = 'yellow';
+    con.shadowColor = 'rgba(50,50,50,1)';
+    con.shadowOffsetX = 2;
+    con.shadowOffsetY =2 ;
+    con.shadowBlur = 4;
+    con.lineWidth = 20;
+    con.lineCap = 'round';
+
+
+    con.beginPath();
+    con.moveTo(120.5,130);
+    con.quadraticCurveTo(150.8,130,160.6,150.5);
+    con.quadraticCurveTo(190,250,210.5,160.5);
+    con.quadraticCurveTo(240,100.5,290,70.5);
+    con.stroke();
+
+
+
+
+
+
+</script>
+</html>

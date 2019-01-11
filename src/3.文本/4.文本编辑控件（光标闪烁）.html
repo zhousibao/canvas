@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  margin: 10px;
+  padding: 10px;
+  background: #fff;
+  border:thin inset #aaa;
+}
+</style>
+<body>
+  <div id="control">
+    Font:
+    <select id="fontSelect">
+      <option value="Lucida" selected>Lucida</option>
+      <option value="sans-serif">sans-serif</option>
+    </select>
+
+    Size:
+    <select id="sizeSelect">
+      <option value="16px">16px</option>
+      <option value="32px">32px</option>
+      <option value="64px" selected>64px</option>
+      <option value="128px">128px</option>
+    </select>
+
+    Fill Color:
+    <select id="colorSelect">
+      <option value="red" selected>red</option>
+      <option value="blue">blue</option>
+      <option value="green">green</option>
+      <option value="black">black</option>
+    </select>
+  </div>
+  <canvas id="canvas" width="800" height="800">
+    Canvas not supported
+  </canvas>
+</body>
+<script>
+var canvas = document.getElementById('canvas'),
+  con = canvas.getContext('2d');
+var drawingSurfaceImageData; // 当前画布ImageData
+var blinkingInterval; // 闪烁时间定时器
+var isBlink = false; // 是否存在
+
+var fontSelect = document.getElementById('fontSelect');
+var sizeSelect = document.getElementById('sizeSelect');
+var colorSelect = document.getElementById('colorSelect');
+
+// 初始化
+con.textAlign = 'center';
+con.textBaseLine = 'middle';
+con.font = `${sizeSelect.value} ${fontSelect.value}`;
+con.fillStyle = colorSelect.value;
+
+
+// 切换字体
+fontSelect.onchange = function(){
+  con.font = `${sizeSelect.value} ${fontSelect.value}`;
+}
+// 切换字体大小
+sizeSelect.onchange = function(){
+  con.font =`${sizeSelect.value} ${fontSelect.value}`;
+}
+// 切换fillStyle
+colorSelect.onchange = function(){
+  con.fillStyle = colorSelect.value;
+}
+
+
+// 坐标转换函数
+function windowToCanvas(x,y){
+  var box = canvas.getBoundingClientRect();
+  //console.log(box);
+
+  const data = { 
+    x:(x-box.left)*(canvas.width/box.width),
+    y:(y-box.top)*(canvas.height/box.height)
+  }
+  return data
+}
+//保留当前画布ImageData
+function saveDrawingSurface() {
+  drawingSurfaceImageData = con.getImageData(0,0,canvas.width,canvas.height)
+}
+
+// 绘制表格
+function drawGrid(color,stepx,stepy){
+  con.save();
+  con.strokeStyle = color;
+  con.lineWidth = 0.5;
+
+  for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+    con.beginPath();
+    con.moveTo(i,0);
+    con.lineTo(i,canvas.height);
+    con.stroke();
+  }
+
+  for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+    con.beginPath();
+    con.moveTo(0,i);
+    con.lineTo(canvas.height,i);
+    con.stroke();
+  }
+  con.restore()
+}
+drawGrid('lightgray',10,10);
+
+
+
+//创建光标对象
+var TextCursor = function (width,fillStyle){
+  this.fillStyle = fillStyle || 'rgba(0,0,0,0.5)';
+  this.width = width || 2;
+  this.left = 0;
+  this.top = 0;
+}
+TextCursor.prototype = {
+  getHeight: function(con){
+    let h = con.measureText('W').width;
+    return h + h/6;
+  },
+  createPath: function(con){
+    con.beginPath();
+    con.rect(this.left,this.top,this.width,this.getHeight(con));
+  },
+  draw: function(con,left,bottom){
+    con.save();
+    this.left = left;
+    this.top = bottom -this.getHeight(con);
+
+    this.createPath(con);
+    con.fillStyle = this.fillStyle;
+    con.fill();
+    con.restore();
+  },
+  erase: function(con,imageData){
+    con.putImageData(imageData,0,0)
+  }
+}
+
+var cursor = new TextCursor();
+saveDrawingSurface();
+
+// 事件
+canvas.onmousedown = function(e){
+  if(!isBlink){
+    let loc = windowToCanvas(e.clientX,e.clientY);
+    
+    //第一次闪烁
+    cursor.draw(con,loc.x,loc.y);
+    setTimeout(function(e){
+      cursor.erase(con,drawingSurfaceImageData);
+    },500)
+    //第一次闪烁结束
+    
+    blinkCursor(loc);
+    isBlink = true;
+  }else{
+    clearInterval(blinkingInterval);//清空上一次的定时器
+    isBlink = false;
+  }
+  
+}
+
+
+//实现光标闪烁
+function blinkCursor(loc){
+  blinkingInterval = setInterval(function(e){
+    // 定时器先绘制再清空（注意）
+    cursor.draw(con,loc.x,loc.y);
+    setTimeout(function(e){
+      cursor.erase(con,drawingSurfaceImageData);
+    },500)
+  },1000)
+}
+
+</script>
+</html>

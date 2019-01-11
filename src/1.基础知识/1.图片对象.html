@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body {
+        background: #ddd;
+        margin: 0;
+    }
+
+    #canvas {
+        margin: 10px;
+        padding: 10px;
+        background: #fff;
+        border: thin inset #aaa;
+    }
+</style>
+<body>
+<canvas id="canvas" width="600" height="600">
+    Canvas not supported
+</canvas>
+
+</body>
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script>
+/**
+ *  1.getImageData() 从Canvas画板上取得所选区域的像素数据
+
+    2.putImageData() 方法函数则表示将所得到的像素数据描画到Canvas画板上形成图形
+
+    3.createImageData() 方法创建新的空白 ImageData 对象。
+ */
+const canvas = document.getElementById('canvas'), 
+context = canvas.getContext('2d');
+
+
+const imgData=context.createImageData(100,100);
+for (var i=0;i<imgData.data.length;i+=4){
+    imgData.data[i+0]=255;
+    imgData.data[i+1]=0;
+    imgData.data[i+2]=0;
+    imgData.data[i+3]=255;
+}
+context.putImageData(imgData,10,10);
+
+</script>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        margin: 10px;
+        padding: 10px;
+        background: #fff;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+<canvas id="canvas" width="600" height="600">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+var canvas = document.getElementById('canvas'),
+  con = canvas.getContext('2d');
+  con.lineWidth = 3;
+  con.strokeStyle = 'blue';
+
+// 封装dashedLineTo方法
+var moveToFunction = CanvasRenderingContext2D.prototype.moveTo;
+CanvasRenderingContext2D.prototype.lastMoveToLaction = {};
+
+CanvasRenderingContext2D.prototype.moveTo = function(x,y){
+  moveToFunction.apply(con,[x,y]);
+  this.lastMoveToLaction.x = x;
+  this.lastMoveToLaction.y = y;
+}
+
+CanvasRenderingContext2D.prototype.dashedLineTo = function(x,y,dashedLength){
+  dashedLength = dashedLength === undefined ? 3 :dashedLength;
+
+    var startX = this.lastMoveToLaction.x;
+    var startY = this.lastMoveToLaction.y;
+
+    var deltaX = x-startX;
+    var deltaY = y-startY;
+
+    var numDashed = Math.floor(
+        Math.sqrt(deltaX*deltaX + deltaY*deltaY)/dashedLength
+    );
+
+    for(let i=0; i<numDashed; ++i){
+        // console.log(i);
+        con[i%2 === 0 ? 'moveTo' : 'lineTo'](startX + (deltaX / numDashed) * i , startY + (deltaY / numDashed) * i);
+    }
+    this.moveTo(x,y)
+}
+// 封装dashedLineTo方法 结束
+
+
+
+con.moveTo(20,20);
+con.dashedLineTo(canvas.width-20,20);
+con.dashedLineTo(canvas.width-20,canvas.height-20);
+con.dashedLineTo(20,canvas.height-20);
+con.dashedLineTo(20,20);
+con.dashedLineTo(canvas.width-20,canvas.height-20);
+con.stroke();
+
+</script>
+</html>

@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>canvas</title>
+    <style>
+        canvas{
+            border:1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas" width="400" height="400"></canvas>
+<script type="text/javascript">
+(function(){
+  var canvas= document.getElementById("canvas");
+  var context = canvas.getContext("2d");
+  var ax,ay; //拖拽圆心坐标
+  var r = 30; // 初始化半径
+  var num = 1; //绘制图形缩放系数
+  var timeOutEvent = 0;//区分拖拽和点击的参数
+
+  //绘制圆形函数
+  function createBlock(a,b,r){
+    context.beginPath();
+    context.fillStyle = "red";
+    context.arc(a,b,r,0,Math.PI*2);
+    context.fill();
+  }
+  // 初始化圆形
+  createBlock(200,200,30);
+  // 
+  canvas.onmousedown = function(ev){
+    var e = ev||event;
+    var x = e.clientX;
+    var y = e.clientY;
+    timeOutEvent = setTimeout("longPress()",500);
+    e.preventDefault();
+    drag(x,y,r);
+  };
+  //缩放事件
+  canvas.onmousewheel = function(ev){
+    var e = ev||event;
+    num += e.wheelDelta/1200;
+    r = 30*num;
+    context.clearRect(0,0,canvas.width,canvas.height);
+
+    // 半径大于0可以画圆
+    if(r > 0){
+      if(ax == null || ay == null){ //未被拖拽
+        createBlock(200,200,r);
+      }else{
+        createBlock(ax,ay,r); //被拖拽后
+      }
+    }else{
+      r = 0;
+      num = 0;
+    }
+  };
+  //拖拽函数
+  function drag(x,y,r){
+    // 按下鼠标判断鼠标位置是否在圆上，当画布上有多个路径时，isPointInPath只能判断最后那一个绘制的路径
+    if(context.isPointInPath(x,y)){
+      //路径正确，鼠标移动事件
+      canvas.onmousemove = function(ev){
+        var e = ev||event;
+        ax = e.clientX;
+        ay = e.clientY;
+        clearTimeout(timeOutEvent);
+        timeOutEvent = 0;
+        //鼠标移动每一帧都清楚画布内容，然后重新画圆
+        context.clearRect(0,0,canvas.width,canvas.height);
+        createBlock(ax,ay,r);
+      };
+
+      //鼠标移开事件
+      canvas.onmouseup = function(){
+        canvas.onmousemove = null;
+        canvas.onmouseup = null;
+        clearTimeout(timeOutEvent);
+        if(timeOutEvent!=0){
+          alert("你这是点击，不是拖拽");
+        }
+      }
+    }
+  }
+
+  // 区分拖拽和点击的参数
+  function longPress(){
+    timeOutEvent = 0;
+  }
+})()
+</script>
+</body>

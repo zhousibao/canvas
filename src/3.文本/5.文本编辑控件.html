@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  margin: 10px;
+  padding: 10px;
+  background: #fff;
+  border:thin inset #aaa;
+}
+</style>
+<body>
+  <div id="control">
+    Font:
+    <select id="fontSelect">
+      <option value="Lucida">Lucida</option>
+      <option value="sans-serif" selected>sans-serif</option>
+    </select>
+
+    Size:
+    <select id="sizeSelect">
+      <option value="16px">16px</option>
+      <option value="32px">32px</option>
+      <option value="64px" selected>64px</option>
+      <option value="128px">128px</option>
+    </select>
+
+    Fill Color:
+    <select id="fillColorSelect">
+      <option value="red" selected>red</option>
+      <option value="blue">blue</option>
+      <option value="green">green</option>
+      <option value="black">black</option>
+    </select>
+
+    Stroke Color:
+    <select id="strokeColorSelect">
+      <option value="red" selected>red</option>
+      <option value="blue">blue</option>
+      <option value="green">green</option>
+      <option value="black">black</option>
+    </select>
+  </div>
+  <canvas id="canvas" width="800" height="800">
+    Canvas not supported
+  </canvas>
+</body>
+<script>
+  /**
+    注意保持像素未整数
+  */
+var canvas = document.getElementById('canvas'),
+  con = canvas.getContext('2d');
+var drawingSurfaceImageData; // 当前画布ImageData
+var blinkingInterval; // 闪烁时间定时器
+var isBlink = false; // 是否存在
+
+var fontSelect = document.getElementById('fontSelect');
+var sizeSelect = document.getElementById('sizeSelect');
+var fillColorSelect = document.getElementById('fillColorSelect');
+var strokeColorSelect = document.getElementById('strokeColorSelect');
+
+// 初始化
+con.font = `${sizeSelect.value} ${fontSelect.value}`;
+con.fillStyle = fillColorSelect.value;
+con.strokeStyle = strokeColorSelect.value;
+
+
+// 切换字体
+fontSelect.onchange = function(){
+  con.font = `${sizeSelect.value} ${fontSelect.value}`;
+}
+// 切换字体大小
+sizeSelect.onchange = function(){
+  con.font =`${sizeSelect.value} ${fontSelect.value}`;
+}
+// 切换fillStyle
+fillColorSelect.onchange = function(){
+  con.fillStyle = fillColorSelect.value;
+}
+// 切换strokeStyle
+strokeColorSelect.onchange = function(){
+  con.strokeStyle = strokeColorSelect.value;
+}
+
+
+// 坐标转换函数
+function windowToCanvas(x,y){
+  var box = canvas.getBoundingClientRect();
+  //console.log(box);
+
+  const data = { 
+    x:Math.ceil((x-box.left)*(canvas.width/box.width)),
+    y:Math.ceil((y-box.top)*(canvas.height/box.height))
+  }
+  return data
+}
+//保留当前画布ImageData
+function saveDrawingSurface() {
+  drawingSurfaceImageData = con.getImageData(0,0,canvas.width,canvas.height)
+}
+
+// 绘制表格
+function drawGrid(color,stepx,stepy){
+  con.save();
+  con.strokeStyle = color;
+  con.lineWidth = 0.5;
+
+  for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+    con.beginPath();
+    con.moveTo(i,0);
+    con.lineTo(i,canvas.height);
+    con.stroke();
+  }
+
+  for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+    con.beginPath();
+    con.moveTo(0,i);
+    con.lineTo(canvas.height,i);
+    con.stroke();
+  }
+  con.restore()
+}
+drawGrid('lightgray',10,10);
+
+
+
+//创建光标对象
+var TextCursor = function (){
+  this.fillStyle = 'rgba(0,0,0,0.5)';
+  this.width = 2;
+  this.left = 0;
+  this.top = 0;
+}
+TextCursor.prototype = {
+  getHeight: function(con){
+    let h = con.measureText('W').width;
+    return Math.ceil(h+ h/6);
+  },
+  createPath: function(con){
+    con.beginPath();
+    con.rect(this.left,this.top,this.width,this.getHeight(con));
+  },
+  draw: function(con,left,bottom){
+    con.save();
+    this.left = left;
+    this.top = bottom - this.getHeight(con);
+
+    this.createPath(con);
+    con.fillStyle = this.fillStyle;
+    con.fill();
+    con.restore();
+  },
+  erase: function(con,imageData){
+    con.putImageData(imageData,0,0,this.left,this.top,this.width,this.getHeight(con))
+  }
+}
+
+
+//实现光标闪烁
+function blinkCursor(x,y){
+  clearInterval(blinkingInterval);
+
+  blinkingInterval = setInterval(function(e){
+    cursor.erase(con,drawingSurfaceImageData);
+    
+    setTimeout(function(e){
+      if(cursor.left === x && cursor.top + cursor.getHeight(con) === y ){
+        cursor.draw(con,x,y);
+      }
+    },300)
+  },1000)
+}
+function moveCursor(x,y){
+  cursor.erase(con,drawingSurfaceImageData); // 首次清空
+  saveDrawingSurface(); // 保留字体image信息
+  con.putImageData(drawingSurfaceImageData,0,0);
+
+  cursor.draw(con,x,y);
+  blinkCursor(x,y);
+}
+
+
+// 文本对象
+var TextLine = function(x,y){
+  this.text = '';
+  this.left = x;
+  this.bottom = y;
+  this.caret = 0;
+};
+TextLine.prototype = {
+  insert: function(text){
+    this.text = this.text.substr(0,this.caret) + text + this.text.substr(this.caret);
+    this.caret += text.length;
+  },
+  removeCharacterBeforeCaret: function(){
+    if(this.caret === 0 ) {
+      return;
+    }
+    this.text = this.text.substring(0,this.caret - 1) + this.text.substring(this.caret);
+    this.caret -- ;
+  },
+  getWidth: function(con){
+    return Math.ceil(con.measureText(this.text).width);
+  },
+  getHeight: function(con){
+    var h = con.measureText('W').width;
+    return Math.ceil(h + h/6)
+  },
+  draw: function(con){
+    con.save();
+    con.textAlign = 'start';
+    con.textBaseline = 'bottom';
+    con.fillText(this.text,this.left,this.bottom);
+    con.restore();
+  },
+  erase: function(con,imageData){
+    con.putImageData(imageData,0,0);
+  }
+}
+
+var cursor = new TextCursor();
+var line;
+saveDrawingSurface();
+
+// 事件
+canvas.onmousedown = function(e){
+  let loc = windowToCanvas(e.clientX,e.clientY);
+  line = new TextLine(loc.x,loc.y);
+  moveCursor(loc.x,loc.y);
+}
+
+
+// 键盘事件
+document.onkeydown = function(e){
+  if(e.keyCode === 8 || e.keyCode === 13){
+    e.preventDefault();
+  }
+  if(e.keyCode === 8){
+    con.save();
+    line.erase(con,drawingSurfaceImageData);
+    line.removeCharacterBeforeCaret();
+    moveCursor(line.left + line.getWidth(con),line.bottom);
+    line.draw(con);
+    con.restore();
+  }
+}
+document.onkeypress = function(e){
+  var key = String.fromCharCode(e.which);
+  if(e.keyCode !== 8 && !e.ctrlKey && !e.metaKey){
+    e.preventDefault();
+    
+    con.save();
+    line.erase(con,drawingSurfaceImageData);
+    line.insert(key);
+
+    moveCursor(line.left + line.getWidth(con),line.bottom);
+    line.draw(con);
+    con.restore();
+  }
+}
+
+
+
+
+</script>
+</html>

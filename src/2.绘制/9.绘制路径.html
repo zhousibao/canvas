@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body {
+        background: #ddd;
+        margin: 0;
+    }
+
+    #canvas {
+        margin: 10px;
+        padding: 10px;
+        background: #fff;
+        border: thin inset #aaa;
+    }
+</style>
+<body>
+<div>
+  <button id="clear">清空</button>
+</div>
+<canvas id="canvas" width="600" height="600">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+const clear = document.getElementById('clear');
+const canvas = document.getElementById('canvas'), 
+context = canvas.getContext('2d');
+
+context.strokeStyle = 'lightgray';
+
+
+
+//清空 
+clear.onclick = function(){
+  //console.log('清空');
+  context.clearRect(0,0,canvas.width,canvas.height);
+}
+
+// 坐标转换函数
+function windowToCanvas(canvas,x,y){
+  var box = canvas.getBoundingClientRect();
+  //console.log(box);
+
+  const data = { 
+    x:(x-box.left)*(canvas.width/box.width),
+    y:(y-box.top)*(canvas.height/box.height)
+  }
+  return data
+}
+
+
+
+let canDraw = false;
+// 绘制路径
+canvas.onmousedown = function(e){
+  canDraw = true;
+  var loc = windowToCanvas(canvas,e.clientX,e.clientY);
+  context.beginPath();
+  context.moveTo(loc.x,loc.y);
+
+
+  canvas.onmousemove = function(e){
+    if(canDraw){
+      var locM = windowToCanvas(canvas,e.clientX,e.clientY);
+      context.lineTo(locM.x,locM.y);
+      context.stroke();
+    }
+  }
+}
+
+window.onmouseup = function() {
+  canDraw = false;
+}
+
+</script>
+</html>

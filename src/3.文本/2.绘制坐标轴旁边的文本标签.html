@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        margin: 10px;
+        padding: 10px;
+        background: #fff;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+    <canvas id="canvas" width="800" height="800">
+        Canvas not supported
+    </canvas>
+
+</body>
+<script>
+var canvas = document.getElementById('canvas'),
+  con = canvas.getContext('2d');
+
+// 绘制表格
+function drawGrid(color,stepx,stepy){
+  con.save();
+  con.strokeStyle = color;
+  con.lineWidth = 0.5;
+
+  for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+    con.beginPath();
+    con.moveTo(i,0);
+    con.lineTo(i,canvas.height);
+    con.stroke();
+  }
+
+  for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+    con.beginPath();
+    con.moveTo(0,i);
+    con.lineTo(canvas.height,i);
+    con.stroke();
+  }
+  con.restore()
+}
+drawGrid('lightgray',10,10);
+
+
+var axis_margin = 40,
+  //坐标圆点
+  axis_origin = {
+    x:axis_margin,
+    y:canvas.height - axis_margin
+  },
+  axis_top = axis_margin, // y轴最顶端
+  axis_right = canvas.width - axis_margin, // x轴最右端
+
+  horizontal = 10,//坐标单位
+  vertical = 10,//坐标单位
+
+  axis_width = axis_right - axis_origin.x, // x轴长度
+  axis_height = axis_origin.y - axis_top, // y轴长度
+
+
+  num_vertical = axis_height/vertical,
+  num_horizontal = axis_width/horizontal,
+
+  tick_width = 10, // 坐标轴刻度的长度
+  tick_linewidth = 0.5,  // 坐标轴刻度的宽度
+  tick_color = 'navy', // 坐标轴刻度的颜色
+
+  axis_linewidth = 1,  // 坐标轴线的宽度
+  axis_color = 'blue'; // 坐标轴线的颜色
+
+
+//横坐标
+function drawHorizontal(){
+    con.beginPath();
+    con.moveTo(axis_origin.x,axis_origin.y);
+    con.lineTo(axis_right,axis_origin.y);
+    con.stroke();
+}
+//纵坐标
+function drawVertical(){
+    con.beginPath();
+    con.moveTo(axis_origin.x,axis_origin.y);
+    con.lineTo(axis_origin.x,axis_top);
+    con.stroke();
+}
+
+//横坐标刻度
+function drawHorizontalTicks() {
+  var deltaY;
+  for(let i=1; i<num_horizontal;i++){
+    con.beginPath();
+    if(i%5 === 0){
+        deltaY = tick_width;
+    }else{
+        deltaY = tick_width/2;
+    }
+    con.moveTo(axis_origin.x + i * horizontal , axis_origin.y - deltaY);
+    con.lineTo(axis_origin.x + i * horizontal , axis_origin.y + deltaY);
+    con.stroke();
+  }
+}
+//纵坐标刻度
+function drawVerticalTicks() {
+  var deltaX;
+  for(let i=1; i<num_vertical;i++){
+      con.beginPath();
+      if(i%5 === 0){
+          deltaX = tick_width;
+      }else{
+          deltaX = tick_width/2;
+      }
+      con.moveTo(axis_origin.x - deltaX , axis_origin.y - i * vertical);
+      con.lineTo(axis_origin.x + deltaX , axis_origin.y - i * vertical);
+      con.stroke();
+  }
+}
+
+// 横坐标数字
+function xNumber(){
+  var numMargin = 30;
+  let textWidth;
+  for(let i=0; i<num_horizontal;i++){
+    if(i%5 === 0){
+      textWidth = con.measureText(i).width;
+      con.fillText(i,axis_origin.x + i * horizontal , axis_origin.y + numMargin);
+      con.fill();
+    }
+  }
+}
+// 横坐标数字
+function yNumber(){
+  var numMargin = 30;
+  let textWidth;
+  for(let i=0; i<num_vertical;i++){
+    if(i%5 === 0){
+      textWidth = con.measureText(i).width;
+      con.fillText(i,axis_origin.x - numMargin , axis_origin.y - i * vertical);
+      con.fill();
+    }
+  }
+}
+
+// 绘制坐标系
+drawAxes();
+function drawAxes(){
+  con.save();
+  con.strokeStyle = axis_color;
+  con.lineWidth = axis_linewidth;
+  drawHorizontal();
+  drawVertical();
+
+  con.lineWidth = 0.5;
+  con.lineWidth = tick_linewidth;
+  con.strokeStyle = tick_color;
+  drawVerticalTicks();
+  drawHorizontalTicks();
+
+  con.fillStyle = 'red';
+  con.font = '16px Arial';
+  con.textAlign = 'center';
+  con.textBaseline = 'middle';
+  xNumber();
+  yNumber();
+
+  con.restore();
+}
+
+</script>
+</html>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        margin-top: 60px;
+        background: #fff;
+        border:thin inset #aaa;
+    }
+
+    #controls{
+        position: absolute;
+        left: 25px;
+        top: 25px;
+    }
+</style>
+<body>
+<div id="controls">
+    Stroke color:
+    <select id="strokeStyle">
+        <option value="red" selected>red</option>
+        <option value="green">green</option>
+        <option value="blue">blue</option>
+        <option value="orange">orange</option>
+    </select>
+
+    <input id="clear" type="button" value="清除">
+</div>
+<canvas id="canvas" width="1000" height="600">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+var canvas = document.getElementById('canvas'),
+    con = canvas.getContext('2d');
+
+var strokeStyleSelect = document.getElementById('strokeStyle');
+var clear = document.getElementById('clear');
+
+var mousedown = {},
+    rubberbandRect = {},
+    drawingSurfaceImageData,
+
+
+    endPoints = [{} ,{}], //结束点集合
+    controlPoints = [{} ,{}], //控制点集合
+
+    isEdit = false, // 是否是编辑状态
+    dragging = false, //是否在绘制过程中
+    draggingPoint = false; // 编辑过程中编辑的哪个点
+
+
+//初始化
+canvas.style.cursor = 'crosshair';
+con.strokeStyle = strokeStyleSelect.value;
+//切换strokeStyle
+strokeStyleSelect.onchange = function(){
+    con.strokeStyle = strokeStyleSelect.value;
+}
+// 清空
+clear.onclick = function(){
+    con.clearRect(0,0,canvas.width,canvas.height);
+    drawGrid('lightgray',10,10);
+    saveDrawingSurface();
+    isEdit = false;
+}
+
+//绘制网格
+function drawGrid(color,stepx,stepy){
+    con.save();
+    con.strokeStyle = color;
+    con.lineWidth = 0.5;
+
+    for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+        con.beginPath();
+        con.moveTo(i,0);
+        con.lineTo(i,canvas.height);
+        con.stroke();
+    }
+
+    for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+        con.beginPath();
+        con.moveTo(0,i);
+        con.lineTo(canvas.width,i);
+        con.stroke();
+    }
+    con.restore();
+}
+drawGrid('lightgray',10,10);
+
+
+
+//窗口坐标转换为canvas坐标
+function windowToCanvas(x,y){
+    let bbox = canvas.getBoundingClientRect();
+    return {
+        x:x-bbox.left*(canvas.width / bbox.width),
+        y:y-bbox.top*(canvas.height / bbox.height)
+    }
+}
+
+//保留当前画布ImageData
+function saveDrawingSurface() {
+    drawingSurfaceImageData = con.getImageData(0,0,canvas.width,canvas.height)
+}
+saveDrawingSurface(); // 初始化保留
+//把上一步保留的ImageData绘制到画布上
+function restoreDrawingSurface(){
+    con.putImageData(drawingSurfaceImageData,0,0);
+}
+
+
+// 获取矩形
+function updateRubberbandRectangle(loc){
+    rubberbandRect.width = Math.abs(loc.x - mousedown.x);
+    rubberbandRect.height = Math.abs(loc.y - mousedown.y);
+    if(loc.x > mousedown.x){
+        rubberbandRect.left = mousedown.x;
+    }else{
+        rubberbandRect.left = loc.x;
+    }
+
+    if(loc.y > mousedown.y){
+        rubberbandRect.top = mousedown.y;
+    }else{
+        rubberbandRect.top = loc.y;
+    }
+    updateAllPonits()
+}
+// 获取矩形的四个点
+function updateAllPonits(){
+    endPoints[0].x = rubberbandRect.left;
+    endPoints[0].y = rubberbandRect.top;
+
+    endPoints[1].x = rubberbandRect.left + rubberbandRect.width;
+    endPoints[1].y = rubberbandRect.top +  rubberbandRect.height;
+
+    controlPoints[0].x = rubberbandRect.left;
+    controlPoints[0].y = rubberbandRect.top +  rubberbandRect.height;
+
+    controlPoints[1].x = rubberbandRect.left + rubberbandRect.width;
+    controlPoints[1].y = rubberbandRect.top;
+
+    drawBezierCurve();
+}
+
+
+
+
+// 绘制贝塞尔曲线
+function drawBezierCurve(){
+    con.beginPath();
+    con.moveTo(endPoints[0].x,endPoints[0].y);
+    con.bezierCurveTo(controlPoints[0].x,controlPoints[0].y,controlPoints[1].x,controlPoints[1].y,endPoints[1].x,endPoints[1].y);
+    con.stroke();
+    drawAllPonits();
+}
+
+// 绘制控制点圆
+function drawControlPoint(index){
+    con.beginPath();
+    con.arc(controlPoints[index].x,controlPoints[index].y,5,0,Math.PI*2,false);
+    con.stroke();
+    con.fill();
+}
+// 绘制控制点圆集合
+function drawControlPoints(){
+    con.save();
+    con.strokeStyle = 'blue';
+    con.fillStyle = 'rgba(255,255,0,.5)';
+    drawControlPoint(0);
+    drawControlPoint(1);
+    con.restore();
+}
+// 绘制结束点圆
+function drawEndPoint(index){
+    con.beginPath();
+    con.arc(endPoints[index].x,endPoints[index].y,5,0,Math.PI*2,false);
+    con.stroke();
+    con.fill();
+}
+// 绘制结束点圆集合
+function drawEndPoints(){
+    con.save();
+    con.strokeStyle = 'navy';
+    con.fillStyle = 'rgba(0,255,0,.5)';
+    drawEndPoint(0);
+    drawEndPoint(1);
+    con.restore();
+}
+// 绘制四个点圆
+function drawAllPonits(){
+    drawControlPoints()
+    drawEndPoints()
+}
+
+
+//聚焦结束点1
+function cursorInEndPoint0(loc){
+    con.beginPath();
+    con.arc(endPoints[0].x,endPoints[0].y,10,0,Math.PI*2,false);
+    if(con.isPointInPath(loc.x,loc.y)){
+        return 'inEndPoint0';
+    }
+    return;
+}
+//聚焦结束点2
+function cursorInEndPoint1(loc){
+    con.beginPath();
+    con.arc(endPoints[1].x,endPoints[1].y,10,0,Math.PI*2,false);
+    if(con.isPointInPath(loc.x,loc.y)){
+        return 'inEndPoint1';
+    }
+    return;
+}
+//聚焦控制点1
+function cursorInControlPoint0(loc){
+    con.beginPath();
+    con.arc(controlPoints[0].x,controlPoints[0].y,10,0,Math.PI*2,false);
+    if(con.isPointInPath(loc.x,loc.y)){
+        return 'inControlPoint0';
+    }
+    return;
+}
+//聚焦控制点2
+function cursorInControlPoint1(loc){
+    con.beginPath();
+    con.arc(controlPoints[1].x,controlPoints[1].y,10,0,Math.PI*2,false);
+    if(con.isPointInPath(loc.x,loc.y)){
+        return 'inControlPoint1';
+    }
+    return;
+}
+
+// 编辑更新点
+function updatePoint(loc){
+    if(draggingPoint === 'inEndPoint0'){
+        endPoints[0].x = loc.x;
+        endPoints[0].y = loc.y;
+    }
+    if(draggingPoint === 'inEndPoint1'){
+        endPoints[1].x = loc.x;
+        endPoints[1].y = loc.y;
+    }
+    if(draggingPoint === 'inControlPoint0'){
+        controlPoints[0].x = loc.x;
+        controlPoints[0].y = loc.y;
+    }
+    if(draggingPoint === 'inControlPoint1'){
+        controlPoints[1].x = loc.x;
+        controlPoints[1].y = loc.y;
+    }
+
+    if(draggingPoint){
+        drawBezierCurve()
+    }
+    
+}
+
+
+
+
+//事件
+canvas.onmousedown = function(e){
+    let loc = windowToCanvas(e.clientX,e.clientY);
+    e.preventDefault();
+
+    if(isEdit){
+        draggingPoint = cursorInControlPoint0(loc) || cursorInControlPoint1(loc) || cursorInEndPoint0(loc) || cursorInEndPoint1(loc);
+        if(draggingPoint){
+            restoreDrawingSurface();
+            updatePoint(loc);
+        }
+    }else{
+        
+        mousedown.x = loc.x;
+        mousedown.y = loc.y;
+
+        dragging = true;
+    }
+}
+
+canvas.onmousemove = function (e) {
+    let loc = windowToCanvas(e.clientX,e.clientY);
+    e.preventDefault();
+
+    if(!isEdit && dragging){
+        restoreDrawingSurface();
+        updateRubberbandRectangle(loc);
+    } 
+    if(isEdit){
+        if(draggingPoint){
+            restoreDrawingSurface();
+            updatePoint(loc);
+        }
+    }
+}
+
+canvas.onmouseup = function (e) {
+    let loc = windowToCanvas(e.clientX,e.clientY);
+
+    if(!isEdit && dragging){
+        restoreDrawingSurface();
+        updateRubberbandRectangle(loc);
+        isEdit = true;
+        dragging = false;
+        canvas.style.cursor = 'pointer';
+    }
+    if(isEdit){
+        if(draggingPoint){
+            restoreDrawingSurface();
+            updatePoint(loc);
+            draggingPoint = false;
+        }
+    }
+
+}
+
+
+
+
+
+
+</script>
+</html>

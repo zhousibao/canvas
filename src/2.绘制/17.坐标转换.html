@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        margin: 10px;
+        padding: 10px;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+<canvas id="canvas" width="600" height="600">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+/**
+ *
+ * 
+ */    
+var canvas = document.getElementById('canvas'),
+con = canvas.getContext('2d');
+
+con.save();
+con.translate(canvas.width/2, canvas.height/2);
+con.rotate(Math.PI/6);
+con.scale(2,1);
+con.strokeRect(0,0,100,100);
+
+con.restore();
+con.strokeRect(10,10,200,200);
+
+
+</script>
+</html>

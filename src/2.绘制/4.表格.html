@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        margin: 10px;
+        padding: 10px;
+        background: #fff;
+        border:thin inset #aaa;
+    }
+</style>
+<body>
+    <canvas id="canvas" width="600" height="600">
+        Canvas not supported
+    </canvas>
+
+</body>
+<script>
+var canvas = document.getElementById('canvas'),
+con = canvas.getContext('2d');
+
+
+function drawGrid(color,stepx,stepy){
+    con.strokeStyle = color;
+    con.lineWidth = 0.5;
+
+    for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+        con.beginPath();
+        con.moveTo(i,0);
+        con.lineTo(i,canvas.height);
+        con.stroke();
+    }
+
+    for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+        con.beginPath();
+        con.moveTo(0,i);
+        con.lineTo(canvas.height,i);
+        con.stroke();
+    }
+}
+drawGrid('lightgray',10,10);
+
+</script>
+</html>

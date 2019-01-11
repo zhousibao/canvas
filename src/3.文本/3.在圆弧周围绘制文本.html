@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  margin: 10px;
+  padding: 10px;
+  background: #fff;
+  border:thin inset #aaa;
+}
+</style>
+<body>
+    <canvas id="canvas" width="800" height="800">
+        Canvas not supported
+    </canvas>
+
+</body>
+<script>
+var canvas = document.getElementById('canvas'),
+  con = canvas.getContext('2d');
+  con.textAlign = 'center';
+  con.textBaseLine = 'middle';
+
+var circle = {
+  x:canvas.width/2,
+  y:canvas.height/2,
+  radius:200
+};
+
+// 绘制表格
+function drawGrid(color,stepx,stepy){
+  con.save();
+  con.strokeStyle = color;
+  con.lineWidth = 0.5;
+
+  for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+    con.beginPath();
+    con.moveTo(i,0);
+    con.lineTo(i,canvas.height);
+    con.stroke();
+  }
+
+  for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+    con.beginPath();
+    con.moveTo(0,i);
+    con.lineTo(canvas.height,i);
+    con.stroke();
+  }
+  con.restore()
+}
+drawGrid('lightgray',10,10);
+
+
+// 绘制
+function drawCircularText(text,starAngle,endAngle){
+  var angleDecrement = (starAngle - endAngle)/(text.length -1),
+  angle = parseFloat(starAngle),
+  index = 0,
+  character;
+
+  con.save();
+  con.fillStyle = 'rgba(100,130,240,0.5)';
+  con.strokeStyle = 'rgba(200,0,0,0.7)';
+  con.font = '64px Lucida Sans';
+
+  while(index < text.length){
+    character = text.charAt(index);
+    con.save();
+    con.beginPath();
+    con.translate(circle.x + Math.cos(angle)*circle.radius,circle.y - Math.sin(angle)*circle.radius);
+    con.rotate(Math.PI/2 - angle);
+    con.fillText(character,0,0);
+    con.strokeText(character,0,0);
+
+    angle -= angleDecrement;
+    index++;
+    con.restore();
+  }
+  con.restore();
+}
+drawCircularText('Clockwise around the circle the circle',Math.PI*2,Math.PI/8 )
+
+
+</script>
+</html>

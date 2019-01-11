@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body {
+        background: #ddd;
+        margin: 0;
+    }
+
+    #canvas {
+        margin: 10px;
+        padding: 10px;
+        background: #fff;
+        border: thin inset #aaa;
+    }
+</style>
+<body>
+<canvas id="canvas" width="600" height="600">
+    Canvas not supported
+</canvas>
+
+</body>
+<script>
+/**
+ * getBoundingClientRect()
+ * 返回元素大小及相对于视口的位置
+ * 
+*/
+
+const canvas = document.getElementById('canvas'), 
+context = canvas.getContext('2d');
+
+context.strokeStyle = 'lightgray';
+const kongImageData = context.getImageData(0,0,canvas.width,canvas.height)
+
+// 坐标转换函数
+function windowToCanvas(canvas,x,y){
+  var box = canvas.getBoundingClientRect();
+  //console.log(box);
+
+  const data = { 
+    x:(x-box.left)*(canvas.width/box.width),
+    y:(y-box.top)*(canvas.height/box.height)
+  }
+  return data
+}
+
+canvas.onmousemove = function(e){
+  var loc = windowToCanvas(canvas,e.clientX,e.clientY);
+  //console.log(e.clientX,e.clientY);
+  //console.log(loc);
+
+  draw(loc);
+}
+
+
+function draw(loc){
+  //清空
+  //context.putImageData(kongImageData,0,0); //清空方法一
+  context.clearRect(0,0,canvas.width,canvas.height); //清空方法一
+
+  lineX(loc);
+  lineY(loc);
+}
+
+
+// x轴辅助线
+function lineX(loc){
+  context.beginPath();
+  context.moveTo(0,loc.y);
+  context.lineTo(canvas.width,loc.y);
+  context.stroke();
+}
+// y轴辅助线
+function lineY(loc){
+  context.beginPath();
+  context.moveTo(loc.x,0);
+  context.lineTo(loc.x,canvas.height);
+  context.stroke();
+}
+
+</script>
+</html>
