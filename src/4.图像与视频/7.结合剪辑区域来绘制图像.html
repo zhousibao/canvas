@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+</style>
+<body>
+  <div id="container">
+    <div>
+      <input id="sunglassButton" type="button" value="Sunglasses">
+    </div>
+    
+    <canvas id="canvas" width="640" height="480">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+var offscreenCanvas = document.createElement('canvas');
+var offscreenCon = offscreenCanvas.getContext('2d');
+offscreenCanvas.height = canvas.height;
+offscreenCanvas.width = canvas.width;
+
+
+
+var sunglassButton = document.getElementById('sunglassButton');
+var sunglassOn = false;
+var line_radius = canvas.width/5;
+
+
+var image = new Image();
+image.crossOrigin = 'anonymous'
+//image.src = 'http://img5.imgtn.bdimg.com/it/u=1026146164,1546452361&fm=11&gp=0.jpg';
+image.src = 'http://t11.baidu.com/it/u=3170375320,519627084&fm=173&s=CEB82FC74C6254860D9978700300D070&w=640&h=480&img.JPEG'
+
+image.onload = function(e){
+  drawOriginalImage();
+}
+
+
+// 绘制滤镜
+function drawLenses(leftLocation,rightLocation){
+  con.save();
+  con.beginPath();
+  con.arc(leftLocation.x, leftLocation.y, line_radius, 0, Math.PI*2, false);
+  con.stroke();
+
+  moveTo(rightLocation.x,rightLocation.y);
+  con.arc(rightLocation.x, rightLocation.y, line_radius, 0, Math.PI*2, false);
+  con.stroke();
+
+  con.clip();
+
+  con.drawImage(offscreenCanvas,0,0,canvas.width,canvas.height);
+  con.restore();
+}
+
+// 绘制贝塞尔曲线图
+function drawWire(center){
+  con.beginPath();
+  con.moveTo(center.x - line_radius/4, center.y - line_radius/2);
+  con.quadraticCurveTo(center.x, center.y - line_radius + 20, center.x + line_radius/4, center.y - line_radius/2);
+  con.stroke()
+}
+
+// 绘制连接线头小圆
+function drawConnectors(center){
+  con.save();
+  con.fillStyle = 'silver';
+  con.strokeStyle = 'rgba(0,0,0,0.4)';
+  con.lineWidth = 2;
+
+  con.beginPath();
+  con.arc(center.x - line_radius/4 ,center.y - line_radius/2, 4, 0, Math.PI*2 ,false);
+  con.fill();
+  con.stroke();
+
+  con.beginPath();
+  con.arc(center.x + line_radius/4 ,center.y - line_radius/2, 4, 0, Math.PI*2 ,false);
+  con.fill();
+  con.stroke();
+
+  con.restore();
+}
+
+// 滤镜效果
+function putSunglassesOn(){
+  var imageData,
+  center = {
+    x:canvas.width/2,
+    y:canvas.height/2
+  },
+  leftLocation = {
+    x:center.x - line_radius -10,
+    y:center.y
+  },
+  rightLocation = {
+    x:center.x + line_radius + 10,
+    y:center.y
+  },
+
+  imageData = con.getImageData(0,0,canvas.width,canvas.height);
+
+  var data = imageData.data;
+  var length = data.length;
+  var width = data.width;
+
+  for(let i=0; i<data.length; ++i){
+    if((i+1) % 4 !== 0){
+      if((i+1) % (width*4) === 0){
+        data[i] = data[i - 4];
+        data[i + 1] = data[i - 3];
+        data[i + 2] = data[i - 2];
+        data[i + 3] = data[i - 1];
+        i += 4;
+      }else{
+        data[i] = 2* data[i] -data[i + 4] - 0.5*data[i + 4];
+      }
+    }
+  }
+
+  offscreenCon.putImageData(imageData,0,0);
+
+  drawLenses(leftLocation,rightLocation);
+  drawWire(center);
+  drawConnectors(center);
+
+}
+
+// 绘制原图
+function drawOriginalImage(){
+  con.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
+}
+
+// 事件处理
+sunglassButton.onclick = function(){
+  if(sunglassOn){
+    sunglassButton.value = 'Sunglasses';
+    drawOriginalImage();
+    sunglassOn = false;
+  }else{
+    sunglassButton.value = 'Original picture';
+    putSunglassesOn();
+    sunglassOn = true;
+  }
+}
+
+</script>
+</html>

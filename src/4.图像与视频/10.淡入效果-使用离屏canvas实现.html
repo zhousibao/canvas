@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+</style>
+<body>
+  <div id="container">
+    <div>
+      <input id="fadeinButton" type="button" value="Fade In">
+    </div>
+    
+    <canvas id="canvas" width="640" height="480">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+/**
+ * 在某段时间内持续向一幅图片运用滤镜，就可以实现动画效果。
+ * 
+ * 
+ * 
+ * */
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+var offscreenCanvas = document.createElement('canvas');
+var offscreenCon = offscreenCanvas.getContext('2d');
+offscreenCanvas.width = canvas.width;
+offscreenCanvas.height = canvas.height;
+
+
+var fadeinButton = document.getElementById('fadeinButton');
+var interval = null;
+var imagedata = null;
+var imagedataOffscreen = null;
+
+
+var image = new Image();
+image.crossOrigin = 'anonymous'
+image.src = 'http://t11.baidu.com/it/u=3170375320,519627084&fm=173&s=CEB82FC74C6254860D9978700300D070&w=640&h=480&img.JPEG'
+
+image.onload = function(e){
+  offscreenCon.drawImage(image,0,0,image.width,image.height,0,0,offscreenCanvas.width,offscreenCanvas.height);
+}
+
+
+// 
+function increaseTransparency(imagedata,steps){
+  var alpha, currentAlpha, step, length = imagedata.data.length;
+
+  for(var i=3; i< length; i+= 4){
+    alpha = imagedataOffscreen.data[i];
+
+    if(alpha > 0){
+      currentAlpha = imagedata.data[i];
+      step = Math.ceil(alpha/steps);
+
+      if(currentAlpha + step <= alpha){
+        imagedata.data[i] += step;
+      }else{
+        imagedata.data[i] = alpha;
+      }
+    }
+  }
+  
+}
+
+//
+function fadeIn(imagedata,steps,duration){
+  var frame = 0,
+  length = imagedata.data.length;
+  for(var i=3; i<length; i+=4){
+    imagedata.data[i] = 0;
+  }
+  
+  interval = setInterval(function(){
+    frame++;
+    if(frame > steps){
+      clearInterval(interval);
+      animationComplete()
+    }else{
+      increaseTransparency(imagedata,steps);
+      con.putImageData(imagedata,0,0);
+    }
+  },duration)
+}
+
+//
+function animationComplete(){
+  setTimeout(function(){
+    con.clearRect(0,0,canvas.width,canvas.height);
+  },1000)
+}
+
+// 事件处理
+fadeinButton.onclick = function(){
+  imagedataOffscreen = offscreenCon.getImageData(0,0,offscreenCanvas.width,offscreenCanvas.height)
+  fadeIn(offscreenCon.getImageData(0,0,offscreenCanvas.width,offscreenCanvas.height), 20, 50)
+}
+
+</script>
+</html>

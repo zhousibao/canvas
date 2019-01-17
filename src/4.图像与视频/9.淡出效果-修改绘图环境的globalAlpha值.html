@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+</style>
+<body>
+  <div id="container">
+    <div>
+      <input id="fadeoutButton" type="button" value="Fade Out">
+    </div>
+    
+    <canvas id="canvas" width="640" height="480">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+/**
+ * 在某段时间内持续向一幅图片运用滤镜，就可以实现动画效果。
+ * 
+ * 此例通过修改绘图环境的 globalAlpha 值来达到淡出的效果
+ * 
+ * */
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+
+var fadeoutButton = document.getElementById('fadeoutButton');
+var interval = null;
+
+
+var image = new Image();
+image.crossOrigin = 'anonymous'
+image.src = 'http://t11.baidu.com/it/u=3170375320,519627084&fm=173&s=CEB82FC74C6254860D9978700300D070&w=640&h=480&img.JPEG'
+
+image.onload = function(e){
+  drawImage();
+}
+
+function drawImage(){
+  con.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
+}
+
+// 改变绘图环境 globalAlpha
+function changeGlobalAlpha(){
+  var step = 0.1;
+  if(con.globalAlpha - step >= 0){
+    con.globalAlpha -= step;
+  }else{
+    con.globalAlpha = 0;
+  }
+}
+
+//
+function fadeOut(steps,duration){
+  var frame = 0,
+
+  interval = setInterval(function(){
+    frame++;
+    if(frame > steps){
+      clearInterval(interval);
+      animationComplete();
+    }else{
+      con.clearRect(0, 0, canvas.width, canvas.height);
+      changeGlobalAlpha();
+      drawImage()
+    }
+  },duration)
+}
+
+//
+function animationComplete(){
+  setTimeout(function(){
+    con.globalAlpha = 1;
+    drawImage()
+  },1000)
+}
+
+
+
+// 事件处理
+fadeoutButton.onclick = function(){
+  fadeOut(11, 50)
+}
+
+</script>
+</html>

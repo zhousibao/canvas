@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+</style>
+<body>
+  <div id="container">
+    <div>
+      <input id="fadeoutButton" type="button" value="Fade Out">
+    </div>
+    
+    <canvas id="canvas" width="640" height="480">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+/**
+ * 在某段时间内持续向一幅图片运用滤镜，就可以实现动画效果。
+ * 
+ * 此例通过修改图片每个像素的 alpha 值来达到淡出的效果
+ * 
+ * */
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+
+var fadeoutButton = document.getElementById('fadeoutButton');
+var interval = null;
+var originalImageData = null;
+
+
+var image = new Image();
+image.crossOrigin = 'anonymous'
+image.src = 'http://t11.baidu.com/it/u=3170375320,519627084&fm=173&s=CEB82FC74C6254860D9978700300D070&w=640&h=480&img.JPEG'
+
+image.onload = function(e){
+  con.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
+  originalImageData = con.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+
+// 
+function increaseTransparency(imagedata,steps){
+  var alpha, currentAlpha, step, length = imagedata.data.length;
+
+  for(var i=3; i< length; i+= 4){
+    alpha = originalImageData.data[i];
+
+    if(alpha > 0 && imagedata.data[i] > 0){
+      currentAlpha = imagedata.data[i];
+      step = Math.ceil(alpha/steps);
+
+      if(currentAlpha -step > 0){
+        imagedata.data[i] -= step;
+      }else{
+        imagedata.data[i] = 0;
+      }
+    }
+  }
+  
+}
+
+//
+function fadeOut(imagedata,steps,duration){
+  var frame = 0,
+  length = imagedata.data.length;
+
+  interval = setInterval(function(){
+    frame++;
+    if(frame > steps){
+      clearInterval(interval);
+      animationComplete();
+    }else{
+      increaseTransparency(imagedata,steps);
+      con.putImageData(imagedata,0,0);
+    }
+  },duration)
+}
+
+//
+function animationComplete(){
+  setTimeout(function(){
+    con.drawImage(image,0,0,canvas.width,canvas.height);
+  },1000)
+}
+
+// 事件处理
+fadeoutButton.onclick = function(){
+  fadeOut(con.getImageData(0,0,canvas.width,canvas.height), 20, 50)
+}
+
+</script>
+</html>
