@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+</style>
+<body>
+  <div id="container">
+    <!-- <div>
+      <input id="fadeinButton" type="button" value="Fade In">
+    </div> -->
+    
+    <canvas id="canvas" width="640" height="480">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+/**
+ *  对于这个放大镜程序来说，讲canvas直接绘制到其自身，要比使用离屏canvas的性能稍好一些。
+ * 
+ * 
+ * 
+ * */
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+var image = new Image();
+image.crossOrigin = 'anonymous'
+image.src = 'http://t11.baidu.com/it/u=3170375320,519627084&fm=173&s=CEB82FC74C6254860D9978700300D070&w=640&h=480&img.JPEG'
+
+image.onload = function(e){
+  con.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
+}
+
+
+var dragging = false; //进入放大镜模式
+var magnifyRectangle = {};
+var imageData = null;
+var magnificationScale = 2; //放大倍数
+var magnifyingGlassRadius = 120; // 放大镜的半径
+
+// 坐标转换函数
+function windowToCanvas(canvas,x,y){
+  var box = canvas.getBoundingClientRect();
+  //console.log(box);
+
+  const data = { 
+    x:(x-box.left)*(canvas.width/box.width),
+    y:(y-box.top)*(canvas.height/box.height)
+  }
+  return data
+}
+
+//
+function drawMagnifyingGlass(mouse){
+  con.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
+  var scaledMagnifyRectangle = null;
+
+  magnifyingGlassX = mouse.x;
+  magnifyingGlassY = mouse.y;
+
+  calculateMagnifyRectangle(mouse);
+  
+  imageData = con.getImageData(magnifyRectangle.x,magnifyRectangle.y,magnifyRectangle.width,magnifyRectangle.height);
+
+  con.save();
+
+  scaledMagnifyRectangle = {
+    width: magnifyRectangle.width * magnificationScale,
+    height: magnifyRectangle.height * magnificationScale
+  }
+
+  setClip();
+
+  con.drawImage(canvas, magnifyRectangle.x, magnifyRectangle.y, magnifyRectangle.width, magnifyRectangle.height,
+    magnifyRectangle.x+magnifyRectangle.width/2-scaledMagnifyRectangle.width/2, magnifyRectangle.y+magnifyRectangle.height/2-scaledMagnifyRectangle.height/2,
+    scaledMagnifyRectangle.width,scaledMagnifyRectangle.height
+  )
+  con.restore();
+  //drawMagnifyingGlassCircle(mouse);
+}
+
+// 放大镜对象
+function calculateMagnifyRectangle(mouse){
+  magnifyRectangle.width = magnifyingGlassRadius*2; 
+  magnifyRectangle.height = magnifyingGlassRadius*2;
+  magnifyRectangle.x = mouse.x - magnifyingGlassRadius;
+  magnifyRectangle.y = mouse.y - magnifyingGlassRadius;
+}
+
+//
+function setClip(){
+  con.beginPath();
+  con.arc(magnifyingGlassX, magnifyingGlassY, magnifyingGlassRadius, 0, Math.PI*2, false);
+  con.clip();
+}
+
+
+// 
+function eraseMagnifyingGtlass(){
+  if(imageData != null){
+    con.putImageData(imageData,magnifyRectangle.x,magnifyRectangle.y)
+  }
+}
+
+
+// 事件处理
+window.onmousemove = function(e){
+  let loc = windowToCanvas(canvas,e.clientX,e.clientY)
+  con.save()
+  con.beginPath()
+  con.rect(0,0,canvas.width,canvas.height);
+
+  if (con.isPointInPath(loc.x,loc.y)){
+    dragging = true
+  }else{
+    dragging = false
+    con.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
+  }
+
+  if(dragging){
+    eraseMagnifyingGtlass();
+    drawMagnifyingGlass(windowToCanvas(canvas,e.clientX,e.clientY))
+  }
+}
+
+</script>
+</html>

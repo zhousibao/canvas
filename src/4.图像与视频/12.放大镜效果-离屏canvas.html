@@ -38,6 +38,11 @@ body{
 var canvas = document.getElementById('canvas');
 var con = canvas.getContext('2d');
 
+var offscreenCanvas = document.createElement('canvas');
+var offscreenCon = offscreenCanvas.getContext('2d');
+offscreenCanvas.width = canvas.width;
+offscreenCanvas.height = canvas.height;
+
 var image = new Image();
 image.crossOrigin = 'anonymous'
 image.src = 'http://t11.baidu.com/it/u=3170375320,519627084&fm=173&s=CEB82FC74C6254860D9978700300D070&w=640&h=480&img.JPEG'
@@ -47,7 +52,7 @@ image.onload = function(e){
 }
 
 
-var dragging = true; //进入放大镜模式
+var dragging = false; //进入放大镜模式
 var magnifyRectangle = {};
 var imageData = null;
 var magnificationScale = 2; //放大倍数
@@ -85,13 +90,16 @@ function drawMagnifyingGlass(mouse){
   }
 
   setClip();
+  
+  offscreenCon.drawImage(canvas, magnifyRectangle.x, magnifyRectangle.y, magnifyRectangle.width, magnifyRectangle.height,
+    0, 0, scaledMagnifyRectangle.width, scaledMagnifyRectangle.height)
 
-  con.drawImage(canvas, magnifyRectangle.x, magnifyRectangle.y, magnifyRectangle.width, magnifyRectangle.height,
+  con.drawImage(offscreenCanvas, 0, 0, scaledMagnifyRectangle.width, scaledMagnifyRectangle.height,
     magnifyRectangle.x+magnifyRectangle.width/2-scaledMagnifyRectangle.width/2, magnifyRectangle.y+magnifyRectangle.height/2-scaledMagnifyRectangle.height/2,
     scaledMagnifyRectangle.width,scaledMagnifyRectangle.height
   )
   con.restore();
-  //drawMagnifyingGlassCircle(mouse);
+
 }
 
 // 放大镜对象
@@ -119,7 +127,19 @@ function eraseMagnifyingGtlass(){
 
 
 // 事件处理
-canvas.onmousemove = function(e){
+window.onmousemove = function(e){
+  let loc = windowToCanvas(canvas,e.clientX,e.clientY)
+  con.save()
+  con.beginPath()
+  con.rect(0,0,canvas.width,canvas.height);
+
+  if (con.isPointInPath(loc.x,loc.y)){
+    dragging = true
+  }else{
+    dragging = false
+    con.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
+  }
+
   if(dragging){
     eraseMagnifyingGtlass();
     drawMagnifyingGlass(windowToCanvas(canvas,e.clientX,e.clientY))
