@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+#video{
+  width: 872px;
+  height: 490px;
+  background: #000;
+  display: none;
+}
+</style>
+<body>
+  <div id="container">
+    <div id="controls">
+      <input type="button" id="controlButton" value="Play"/>
+      <input type="checkbox" id="flipCheckbox"/> Flip
+    </div>
+    <div>
+      <video id="video" muted controls="">
+          <source src="https://vdse.bdstatic.com//e509104a380c00fa8d2cb13d2fa2c1ec?authorization=bce-auth-v1%2F40f207e648424f47b2e3dfbb1014b1a5%2F2017-05-11T09%3A02%3A31Z%2F-1%2F%2F9f71c27b020218c3dc417156e4b6dc243373f6c7c1caf189ffacc83a580ca57a" type="video/mp4">
+      </video>
+    </div>
+    <canvas id="canvas" width="872" height="490">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+/**
+ * 
+ * 
+ * 
+ * 
+ * 
+ * */
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+var offscreenCanvas = document.createElement('canvas');
+var offscreenCon = offscreenCanvas.getContext('2d');
+offscreenCanvas.width = canvas.width;
+offscreenCanvas.height = canvas.height;
+
+var controlButton = document.getElementById('controlButton');
+var flipCheckbox = document.getElementById('flipCheckbox');
+
+controlButton.onclick = function(e){
+  if(controlButton.value === 'Play'){
+    startPlaying();
+    controlButton.value = 'Pause';
+  }else{
+    stopPlaying();
+    controlButton.value = 'Play';
+  }
+}
+
+
+
+var imageData;
+var poster = new Image();
+
+poster.src = 'b.jpg';
+poster.onload = function(){
+  con.drawImage(poster,0,0,poster.width,poster.height,0,0,canvas.width,canvas.height);
+}
+
+
+var video = document.getElementById('video');
+// video.oncanplay = function(){
+//   video.play();
+//   window.requestNextAnimationFrame(animate);
+// }
+
+// function animate(){
+//   if(!video.ended){
+//     con.drawImage(video,0,0,canvas.width,canvas.height);
+//     window.requestNextAnimationFrame(animate);
+//   }
+// }
+
+function drawFlipped(){
+  con.save();
+  con.translate(canvas.width/2,canvas.height/2);
+  con.rotate(Math.PI);
+  con.translate(-canvas.width/2,-canvas.height/2);
+  con.drawImage(offscreenCanvas,0,0);
+  con.restore();
+}
+
+function nextVideoFrame(){
+  if(video.ended){
+    controlButton.value = 'Play';
+  }else{
+    offscreenCon.drawImage(video,0,0,offscreenCanvas.width,offscreenCanvas.height);
+    if(flipCheckbox.checked){
+      drawFlipped();
+    }else{
+      con.drawImage(offscreenCanvas,0,0);
+    }
+
+    requestNextAnimationFrame(nextVideoFrame);
+  }
+}
+
+function startPlaying(){
+  requestNextAnimationFrame(nextVideoFrame);
+  video.play();
+}
+
+function stopPlaying(){
+  video.pause();
+}
+
+
+
+
+
+
+
+// 封装时间帧函数
+window.requestNextAnimationFrame = (
+  function(){
+    var originalWebkitMethod,
+    wrapper = undefined,
+    callback = undefined,
+    geckoVersion = 0,
+    userAgent = navigator.userAgent,
+    index = 0,
+    self = this;
+
+    if(window.webkitRequestAnimationFrame){
+      wrapper = function(time){
+        if(time === undefined){
+          time = +new Date();
+        }
+        self.callback(time);
+      };
+
+      originalWebkitMethod = window.webkitRequestAnimationFrame;
+      window.webkitRequestAnimationFrame = function(callback,element){
+        self.callback = callback;
+        
+        originalWebkitMethod(wrapper, element);
+      }
+    }
+
+    if(window.mozRequestAnimationFrame){
+      index = userAgent.indexOf('rv:');
+      if(userAgent.indexOf('Gecko') != -1){
+        geckoVersion = userAgent.substr(index + 3,3);
+
+        if(geckoVersion === '2.0'){
+          window.mozRequestAnimationFrame = undefined;
+        }
+      }
+    }
+
+    return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame ||
+      window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+      function(callback,element){
+        var start,finish;
+
+        window.setTimeout(function(){
+          start = + new Date();
+          callback(start);
+          finish = + new Date();
+          self.timeout = 1000/60 - (finish - start)
+        },self.timeout);
+      }
+  }
+)();
+
+
+
+
+
+</script>
+</html>

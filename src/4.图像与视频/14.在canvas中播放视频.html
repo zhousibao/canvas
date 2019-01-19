@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+#video{
+  width: 872px;
+  height: 490px;
+  background: #000;
+  display: none;
+}
+</style>
+<body>
+  <div id="container">    
+    <div>
+      <video id="video" muted controls="">
+          <source src="https://vdse.bdstatic.com//e509104a380c00fa8d2cb13d2fa2c1ec?authorization=bce-auth-v1%2F40f207e648424f47b2e3dfbb1014b1a5%2F2017-05-11T09%3A02%3A31Z%2F-1%2F%2F9f71c27b020218c3dc417156e4b6dc243373f6c7c1caf189ffacc83a580ca57a" type="video/mp4">
+      </video>
+    </div>
+    <canvas id="canvas" width="872" height="490">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+/**
+ * video事件
+ * 
+ * onloadstart 开始加载时
+ * ondurationchange 当视频的时长发生变化时
+ * onloadedmetadata 视频的元数据加载后执行
+ * onloadeddata 在当前帧的数据可用时执行
+ * onprogress 视频正在下载时执行 
+ * oncanplay 视频准备开始播放时执行
+ * oncanplaythrough 当视频可以正常播放且无需停顿时执行
+ * 
+ * 
+ * 
+ * video 属性
+ * 
+ * autoplay 视频在就绪后马上播放
+ * controls 显示控件
+ * src 视频地址
+ * width 视频播放器的宽度
+ * height 视频播放器的高度
+ * loop 循环播放
+ * muted 视频的音频输出为静音
+ * poster 规定视频正在加载时显示的图像，直到用户点击播放按钮。
+ * preload 视频在页面加载时进行加载，并预备播放，如果使用 "autoplay"，则忽略该属性。
+ * 
+ * 
+ * */
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+var video = document.getElementById('video');
+video.oncanplay = function(){
+  //console.log(window.requestAnimationFrame);
+
+  video.play();
+  //window.requestAnimationFrame(animate);
+  window.requestNextAnimationFrame(animate);
+}
+
+
+function animate(){
+  if(!video.ended){
+    con.drawImage(video,0,0,canvas.width,canvas.height);
+    //window.requestAnimationFrame(animate);
+    window.requestNextAnimationFrame(animate);
+  }
+}
+
+
+// 封装时间帧函数
+window.requestNextAnimationFrame = (
+  function(){
+    var originalWebkitMethod,
+    wrapper = undefined,
+    callback = undefined,
+    geckoVersion = 0,
+    userAgent = navigator.userAgent,
+    index = 0,
+    self = this;
+
+    if(window.webkitRequestAnimationFrame){
+      wrapper = function(time){
+        if(time === undefined){
+          time = +new Date();
+        }
+        self.callback(time);
+      };
+
+      originalWebkitMethod = window.webkitRequestAnimationFrame;
+      window.webkitRequestAnimationFrame = function(callback,element){
+        self.callback = callback;
+        
+        originalWebkitMethod(wrapper, element);
+      }
+    }
+
+    if(window.mozRequestAnimationFrame){
+      index = userAgent.indexOf('rv:');
+      if(userAgent.indexOf('Gecko') != -1){
+        geckoVersion = userAgent.substr(index + 3,3);
+
+        if(geckoVersion === '2.0'){
+          window.mozRequestAnimationFrame = undefined;
+        }
+      }
+    }
+
+    return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame ||
+      window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+      function(callback,element){
+        var start,finish;
+
+        window.setTimeout(function(){
+          start = + new Date();
+          callback(start);
+          finish = + new Date();
+          self.timeout = 1000/60 - (finish - start)
+        },self.timeout);
+      }
+  }
+)();
+
+
+
+
+
+</script>
+</html>

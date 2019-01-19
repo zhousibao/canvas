@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+</style>
+<body>
+  <div id="container">    
+    <canvas id="canvas" width="640" height="480">
+      Canvas not supported
+    </canvas>
+  </div>
+    
+
+</body>
+<script>
+/**
+ * HTML5的拖放(Drag and Drop)
+ * 图片安全问题无法访问
+ * 
+ * 
+ * 
+ * */
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+var image = new Image();
+image.src = 'b.jpg'
+// image.src = 'htmldragdrop.jpg'
+
+image.onload = function(e){
+  con.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
+}
+
+
+canvas.addEventListener('dragenter',function(e){
+  e.preventDefault();
+  e.dataTransfer.effectAllowed = 'copy';
+},false);
+
+canvas.addEventListener('dragover',function(e){
+  e.preventDefault()
+},false);
+
+window.requestFileSystem = window.requestFileSyetem || window.webkitRequestFileSystem;
+
+canvas.addEventListener('drop', function(e){
+  var file = e.dataTransfer.files[0];
+  //console.log(file)
+
+  window.requestFileSystem(window.TEMPORARY, 5*1024*1024, 
+    function(fs){
+      console.log(file)
+      fs.root.getFile(file.name, {create: true}, 
+        function(fileEntry){
+          fileEntry.createWriter(function(writer){
+            writer.write(file);
+          });
+          image.src = fileEntry.toURL();
+        },
+        function(e){
+          console.log('1',e.code);
+          alert(e.code);
+        }
+      );
+    },
+    function(e){
+      console.log('2',e);
+      alert(e.code);
+    }
+  );
+},false)
+
+
+</script>
+</html>

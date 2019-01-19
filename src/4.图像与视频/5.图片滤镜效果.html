@@ -41,7 +41,7 @@ var fu = document.getElementById('fu');
 var hei = document.getElementById('hei');
 
 var image = new Image();
-image.crossOrigin = 'anonymous'
+image.crossOrigin = 'anonymous'; // 网络图片需加允许跨域
 image.src = 'http://img5.imgtn.bdimg.com/it/u=1026146164,1546452361&fm=11&gp=0.jpg';
 
 image.onload = function(e){
