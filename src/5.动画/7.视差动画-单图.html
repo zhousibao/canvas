@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  /* background: #ddd; */
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+#controls{
+  position:relative;
+}
+</style>
+<body>
+  <div id="controls">
+    <input type="button" id="animateButton" value="Animate"/>
+  </div>
+  <canvas id="canvas" width="800" height="800">
+    Canvas not supported
+  </canvas>
+</body>
+
+<script src="requestNextAnimationFrame.js"></script>
+<script>
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+var animateButton = document.getElementById('animateButton');
+
+
+
+var paused = true;
+var fps = 0;
+var lastTime = 0;
+
+
+var skyOffset = 0;
+var SKY_VELOCITY = 15;
+var grassOffset = 0;
+var GRASS_VELOCITY = 40;
+var boardOffset = 0;
+var BOARD_VELOCITY = 60;
+
+var all = new Image();
+all.src = 'all.jpg';
+
+all.onload = function(e){
+  canvas.width = all.width;
+  canvas.height = all.height;
+  draw();
+}
+
+
+// 清除
+function erase(){
+  con.clearRect(0,0,canvas.width,canvas.height);
+}
+
+// 绘制背景
+function draw(){
+  skyOffset = skyOffset < canvas.width ? skyOffset + SKY_VELOCITY/fps : 0;
+  grassOffset = grassOffset < canvas.width ? grassOffset + GRASS_VELOCITY/fps : 0;
+  boardOffset = boardOffset < canvas.width ? boardOffset + BOARD_VELOCITY/fps : 0;
+
+  con.save();
+  con.translate(-skyOffset, 0);
+  con.drawImage(all,0,0,all.width,545,0,0,all.width,545);
+  con.drawImage(all,0,0,all.width,545,all.width,0,all.width + all.width,545)
+  con.restore();
+
+  con.save();
+  con.translate(-grassOffset, 0);
+  con.drawImage(all,0,545,all.width,135, 0,545,all.width,135);
+  con.drawImage(all,0,545,all.width,135, all.width,545,all.width + all.width,135)
+  con.restore();
+
+  con.save();
+  con.translate(-boardOffset, 0);
+  con.drawImage(all,0,680,all.width,206, 0,680,all.width,206);
+  con.drawImage(all,0,680,all.width,206, all.width,680,all.width + all.width,206)
+  con.restore();
+}
+
+// 计算fps
+function calculateFps(){
+  let now = new Date()
+  let fps = 1000/(now - lastTime);
+  lastTime = now;
+  return fps.toFixed(2);
+}
+
+function animate(){
+  fps = calculateFps()
+
+  if(!paused){
+    erase();
+    draw();
+    window.requestNextAnimationFrame(animate);
+  }
+}
+
+//Event handles
+animateButton.onclick = function(e){
+  paused = paused ? false : true;
+  if(paused){
+    animateButton.value = 'Animate';
+  }else{
+    animateButton.value = 'Pause';
+    window.requestNextAnimationFrame(animate);
+  }
+}
+
+</script>
+</html>

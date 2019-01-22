@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  /* background: #ddd; */
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+#controls{
+  position:relative;
+}
+</style>
+<body>
+  <div id="controls">
+    <input type="button" id="animateButton" value="Animate"/>
+  </div>
+  <canvas id="canvas" width="800" height="800">
+    Canvas not supported
+  </canvas>
+</body>
+
+<script src="requestNextAnimationFrame.js"></script>
+<script>
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+var animateButton = document.getElementById('animateButton');
+
+
+
+var paused = true;
+var fps = 0;
+var lastTime = 0;
+
+var skyOffset = 0;
+var SKY_VELOCITY = 100;
+var sky = new Image();
+sky.src = 'https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1548148773741&di=32e8931666021d1dc89a9eb8d657aa9f&imgtype=0&src=http%3A%2F%2Fimgsrc.baidu.com%2Fimgad%2Fpic%2Fitem%2F6a63f6246b600c334a539901104c510fd8f9a1d5.jpg';
+sky.onload = function(e){
+  canvas.width = sky.width;
+  canvas.height = sky.height;
+  draw();
+  
+}
+
+
+// 清除
+function erase(){
+  con.clearRect(0,0,canvas.width,canvas.height);
+}
+
+// 绘制背景
+function draw(){
+  skyOffset = skyOffset < canvas.width ? skyOffset + SKY_VELOCITY/fps : 0;
+
+  con.save();
+  con.translate(-skyOffset, 0);
+  con.drawImage(sky,0,0);
+  con.drawImage(sky, sky.width -2, 0)
+  con.restore();
+}
+
+// 计算fps
+function calculateFps(){
+  let now = new Date()
+  let fps = 1000/(now - lastTime);
+  lastTime = now;
+  return fps.toFixed(2);
+}
+
+function animate(){
+  fps = calculateFps()
+
+  if(!paused){
+    erase();
+    draw();
+    window.requestNextAnimationFrame(animate);
+  }
+}
+
+//Event handles
+animateButton.onclick = function(e){
+  paused = paused ? false : true;
+  if(paused){
+    animateButton.value = 'Animate';
+  }else{
+    animateButton.value = 'Pause';
+    window.requestNextAnimationFrame(animate);
+  }
+}
+
+</script>
+</html>
