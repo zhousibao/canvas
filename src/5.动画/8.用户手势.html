@@ -21,27 +21,17 @@ body{
       <input id="fadeinButton" type="button" value="Fade In">
     </div> -->
     
-    <canvas id="canvas" width="640" height="480">
+    <canvas id="canvas" width="960" height="720">
       Canvas not supported
     </canvas>
   </div>
     
 
 </body>
+<script src="requestNextAnimationFrame.js"></script>
 <script>
-/**
- *
- * 
- * 
- * 
- * */
 var canvas = document.getElementById('canvas');
 var con = canvas.getContext('2d');
-
-var offscreenCanvas = document.createElement('canvas');
-var offscreenCon = offscreenCanvas.getContext('2d');
-offscreenCanvas.width = canvas.width;
-offscreenCanvas.height = canvas.height;
 
 var image = new Image();
 image.crossOrigin = 'anonymous'
@@ -55,12 +45,17 @@ image.onload = function(e){
 var dragging = false; //进入放大镜模式
 var magnifyRectangle = {};
 var magnificationScale = 2; //放大倍数
-var magnifyingGlassRadius = 120; // 放大镜的半径
+var magnifyingGlassRadius = 60; // 放大镜的半径
+
+var disc = null; // 动画循环点
+var animationLoop = null; //保留循环id
+
+var mousedown = null; // 鼠标点击位置
+var mouseup = null; // 鼠标松开位置
 
 // 坐标转换函数
 function windowToCanvas(canvas,x,y){
   var box = canvas.getBoundingClientRect();
-  //console.log(box);
 
   const data = { 
     x:(x-box.left)*(canvas.width/box.width),
@@ -69,7 +64,7 @@ function windowToCanvas(canvas,x,y){
   return data
 }
 
-//
+//绘制放大镜
 function drawMagnifyingGlass(mouse){
   con.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
   var scaledMagnifyRectangle = null;
@@ -84,16 +79,12 @@ function drawMagnifyingGlass(mouse){
   }
 
   setClip(mouse);
-  
-  offscreenCon.drawImage(canvas, magnifyRectangle.x, magnifyRectangle.y, magnifyRectangle.width, magnifyRectangle.height,
-    0, 0, scaledMagnifyRectangle.width, scaledMagnifyRectangle.height)
 
-  con.drawImage(offscreenCanvas, 0, 0, scaledMagnifyRectangle.width, scaledMagnifyRectangle.height,
+  con.drawImage(canvas, magnifyRectangle.x, magnifyRectangle.y, magnifyRectangle.width, magnifyRectangle.height,
     magnifyRectangle.x+magnifyRectangle.width/2-scaledMagnifyRectangle.width/2, magnifyRectangle.y+magnifyRectangle.height/2-scaledMagnifyRectangle.height/2,
     scaledMagnifyRectangle.width,scaledMagnifyRectangle.height
   )
   con.restore();
-
 }
 
 // 放大镜对象
@@ -104,7 +95,7 @@ function calculateMagnifyRectangle(mouse){
   magnifyRectangle.y = mouse.y - magnifyingGlassRadius;
 }
 
-//
+// 绘制剪辑区域
 function setClip(mouse){
   con.beginPath();
   con.arc(mouse.x, mouse.y, magnifyingGlassRadius, 0, Math.PI*2, false);
@@ -118,24 +109,84 @@ function erase(){
 }
 
 
-// 事件处理
-window.onmousemove = function(e){
-  let loc = windowToCanvas(canvas,e.clientX,e.clientY)
-  con.save()
-  con.beginPath()
-  con.rect(0,0,canvas.width,canvas.height);
 
-  if (con.isPointInPath(loc.x,loc.y)){
-    dragging = true
-  }else{
-    dragging = false
-    con.drawImage(image,0,0,image.width,image.height,0,0,canvas.width,canvas.height);
+
+
+// 动画
+function animate(){
+  erase();
+  update()
+  drawMagnifyingGlass(disc);
+  animationLoop = window.requestNextAnimationFrame(animate);
+}
+
+// 更新动画循环点
+function update(){
+  if(disc.x + disc.velocityX + magnifyingGlassRadius > canvas.width || disc.x + disc.velocityX - magnifyingGlassRadius < 0){
+    disc.velocityX = -disc.velocityX;
   }
 
+  if(disc.y + disc.velocityY + magnifyingGlassRadius > canvas.height || disc.y + disc.velocityY - magnifyingGlassRadius < 0){
+    disc.velocityY = -disc.velocityY;
+  }
+
+  disc.x += disc.velocityX;
+  disc.y += disc.velocityY;
+}
+
+
+// 初始化动画循环点和移动速度
+function calcSpeed(loc){
+  let elapsedTime = (mouseup.time - mousedown.time)/1000;
+  let velocityX = (mouseup.x - mousedown.x)/500/elapsedTime;
+  let velocityY = (mouseup.y - mousedown.y)/500/elapsedTime;
+  
+  disc = {
+    x:loc.x,
+    y:loc.y,
+    velocityX: velocityX,
+    velocityY: velocityY
+  }
+}
+
+// 事件处理
+canvas.onmousedown = function(e){
+  e.preventDefault();
+  let loc = windowToCanvas(canvas,e.clientX,e.clientY);
+  mousedown = {
+    x:loc.x,
+    y:loc.y,
+    time: (new Date()).getTime()
+  };
+  window.cancelAnimationFrame(animationLoop); //取消动画循环
+  erase(); // 擦除上次动画循环
+  
+  drawMagnifyingGlass(windowToCanvas(canvas,e.clientX,e.clientY))
+  dragging = true;
+}
+
+
+canvas.onmousemove = function(e){
   if(dragging){
     erase();
     drawMagnifyingGlass(windowToCanvas(canvas,e.clientX,e.clientY))
   }
+}
+
+
+canvas.onmouseup = function(e){
+  let loc = windowToCanvas(canvas,e.clientX,e.clientY);
+  mouseup = {
+    x:loc.x,
+    y:loc.y,
+    time: (new Date()).getTime()
+  };
+
+  if(dragging){
+    calcSpeed(loc)
+    animationLoop = window.requestNextAnimationFrame(animate);
+  }
+  dragging = false;
 }
 
 </script>

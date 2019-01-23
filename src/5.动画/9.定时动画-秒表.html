@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+    body{
+        background: #ddd;
+        margin: 0;
+    }
+    #canvas{
+        background: #fff;
+    }
+</style>
+<body>
+<div class="con">
+    <div>
+        <input type="text" id="secondsInput">
+        <input type="button" id="startStopButton" value="start">
+    </div>
+    <canvas id="canvas" width="600" height="600">
+        Canvas not supported
+    </canvas>
+</div>
+
+
+</body>
+<script src="requestNextAnimationFrame.js"></script>
+<script>
+    var canvas = document.getElementById('canvas'),
+        con = canvas.getContext('2d');
+
+
+
+    //参数
+
+    var
+
+    //仪表盘最小中心圆样式
+    CENTROID_RADIUS = 10,
+    CENTROID_STROKE_STYLE = 'rgba(0,0,0,0.5)',
+    CENTROID_FILL_STYLE = 'rgba(80,190,240,0.6)',
+
+    RING_INNER_RADIUS = 35,
+    RING_OUTER_RADIUS = 55,
+
+    ANNOTATIONS_FILL_STYLE = 'rgba(0,0,230,0.9)',
+    ANNOTATIONS_TEXT_SIZE = 12,
+
+    TICK_WIDTH = 14,
+    TICK_LONG_STROKE_STYLE = 'rgba(100,140,230,0.9)',
+    TICK_SHORT_STROKE_STYLE = 'rgba(100,140,230,0.7)',
+
+    TRACKING_DIAL_STROKING_STYLE = 'rgba(100,140,230,0.5)',
+
+    GUIDEWIRE_STROKE_STYLE = 'goldenrod',
+    GUIDEWIRE_FILL_STYLE = 'rgba(250,250,0,0.6)',
+
+    circle = {
+        x:canvas.width/2,
+        y:canvas.height/2,
+        radius:150
+    };
+
+    var startAngle = -Math.PI/2; // 开始角度
+    var endAngle = Math.PI*3/2; // 结束角度
+
+    //初始化
+    con.shadowBlur = 4;
+    con.shadowOffsetX = 2;
+    con.shadowOffsetY = 2;
+    con.shadowColor = 'rgba(0,0,0,0,4)';
+
+    con.textAlign = 'center';
+    con.textBaseline = 'middle';
+    drawGrid('lightgray',10,10);
+    drawDial();
+
+    //绘制表格
+    function drawGrid(color,stepx,stepy){
+        con.save();
+        con.shadowColor = undefined;
+        con.shadowOffsetX =0;
+        con.shadowOffsetY = 0;
+        con.strokeStyle = color;
+        con.fillStyle = '#ffffff';
+        con.lineWidth = 0.5;
+
+        con.fillRect(0,0,canvas.width,canvas.height);
+
+        for(let i = stepx + 0.5; i<canvas.width; i+=stepx){
+            con.beginPath();
+            con.moveTo(i,0);
+            con.lineTo(i,canvas.height);
+            con.stroke();
+        }
+
+        for(let i = stepy + 0.5; i<canvas.height; i+=stepy){
+            con.beginPath();
+            con.moveTo(0,i);
+            con.lineTo(canvas.height,i);
+            con.stroke();
+        }
+
+        con.restore();
+    }
+
+    //绘制仪表盘
+    function drawDial(){
+        var loc = {
+            x: circle.x,
+            y:circle.y
+        }
+
+        drawCentroid();
+        drawCentroidGuidewire(loc);
+        drawRing();
+        drawTickInnerCircle();
+        drawTicks();
+        drawAnnotations();
+    }
+
+    //绘制最小圆，  仪表盘中心点
+    function drawCentroid() {
+        con.beginPath();
+        con.save();
+        con.strokeStyle = CENTROID_STROKE_STYLE;
+        con.fillStyle = CENTROID_FILL_STYLE;
+        con.arc(circle.x,circle.y,CENTROID_RADIUS,0,Math.PI*2,false);
+        con.stroke();
+        con.fill();
+        con.restore();
+    }
+
+    //绘制仪表盘指针和指针顶端小圆
+    function drawCentroidGuidewire(loc) {
+        let angle = startAngle +  Math.PI/30, //初始化指针位于0刻度。
+            radius,
+            endpt;
+
+        radius = circle.radius + RING_OUTER_RADIUS;
+
+        if(loc.x >= circle.x){
+            endpt = {
+                x:circle.x + radius*Math.cos(angle),
+                y:circle.y + radius*Math.sin(angle)
+            };
+        }else{
+            endpt = {
+                x:circle.x - radius*Math.cos(angle),
+                y:circle.y - radius*Math.sin(angle)
+            };
+        }
+
+        con.save();
+        con.strokeStyle = GUIDEWIRE_STROKE_STYLE;
+        con.fillStyle = GUIDEWIRE_FILL_STYLE;
+
+        con.beginPath();
+        con.moveTo(circle.x,circle.y);
+        con.lineTo(endpt.x,endpt.y);
+        con.stroke();
+
+        con.beginPath();
+        con.strokeStyle = TICK_LONG_STROKE_STYLE;
+        con.arc(endpt.x,endpt.y,5,0,Math.PI*2,false);
+        con.fill();
+        con.stroke();
+
+        con.restore();
+    }
+
+    //绘制仪表盘最外圈
+    function drawRing() {
+        drawRingOuterCircle();
+        con.beginPath();
+        con.strokeStyle = 'rgba(0,0,0,0.1)';
+        con.arc(circle.x,circle.y,circle.radius+RING_OUTER_RADIUS,0,Math.PI*2,false);
+
+        con.fillStyle = 'rgba(100,140,230,0.1)';
+        con.fill();
+        con.stroke();
+    }
+    //绘制仪表盘最外圈阴影
+    function drawRingOuterCircle() {
+        con.shadowColor = 'rgba(0,0,0,0.7)';
+        con.shadowOffsetX = 3;
+        con.shadowOffsetY = 3;
+        con.shadowBlur = 6;
+        con.strokeStyle = TRACKING_DIAL_STROKING_STYLE;
+
+        con.beginPath();
+        con.arc(circle.x,circle.y,circle.radius+RING_OUTER_RADIUS,0,Math.PI*2,true);
+        con.stroke();
+    }
+
+    //绘制仪表盘数字刻度圆
+    function drawTickInnerCircle() {
+        con.save();
+        con.beginPath();
+        con.strokeStyle = 'rgba(0,0,0,0.1)';
+        con.arc(circle.x,circle.y,circle.radius+RING_INNER_RADIUS,0,Math.PI*2,false);
+        con.stroke();
+        con.restore();
+    }
+    
+    //绘制刻度
+    function drawTick(angle,radius,cnt) {
+        var tickWidth = cnt%5 === 0 ? TICK_WIDTH : TICK_WIDTH/2;
+
+        con.beginPath();
+        con.moveTo(
+            circle.x + Math.cos(angle) * (radius -tickWidth),
+            circle.y + Math.sin(angle) * (radius -tickWidth)
+        );
+        con.lineTo(
+            circle.x + Math.cos(angle) * (radius),
+            circle.y + Math.sin(angle) * (radius)
+        );
+
+        con.strokeStyle = TICK_SHORT_STROKE_STYLE;
+        con.stroke();
+    }
+
+    function drawTicks(){
+        let radius = circle.radius + RING_INNER_RADIUS,
+            ANGLE_MAX = endAngle,
+            ANGLE_DELTA = Math.PI/30;
+
+        con.save();
+
+        for(let angle = startAngle, cnt = 0; angle<ANGLE_MAX; angle+=ANGLE_DELTA,cnt++){
+            drawTick(angle,radius,cnt++)
+        }
+
+        con.restore();
+
+    }
+
+    //绘制仪表盘数字
+    function drawAnnotations() {
+        let radius = circle.radius + RING_INNER_RADIUS;
+        con.save();
+        con.fillStyle = ANNOTATIONS_FILL_STYLE;
+        con.font = ANNOTATIONS_TEXT_SIZE + 'px Helvetica';
+
+        for(let angle=startAngle,text=60; angle< endAngle; angle += Math.PI/6,text -=5){
+            con.beginPath();
+            if(text !== 60){
+                con.fillText(
+                    text,
+                    circle.x + Math.cos(angle)*(radius - TICK_WIDTH*2),
+                    circle.y + Math.sin(angle)*(radius - TICK_WIDTH*2)
+                );
+            }
+            
+        }
+        con.restore();
+    }
+
+
+
+    //
+    // Constructor
+    var Stopwatch = function(){};
+    Stopwatch.prototype = {
+        startTime: 0,
+        running: false,
+        elapsed: undefined,
+
+        start: function(){
+            this.startTime = +new Date();
+            this.elapsedTime = undefined;
+            this.running = true;
+        },
+
+        stop: function(){
+            this.elapsed = (+new Date()) - this.startTime;
+            this.running = false;
+        },
+
+        getElapsedTime: function(){
+            if(this.running){
+                return (+new Date()) - this.startTime;
+            }else{
+                return this.elapsed;
+            }
+        },
+
+        isRunning: function(){
+            return this.running;
+        },
+
+        reset: function(){
+            this.elapsed = 0;
+        }
+    }
+
+
+    //
+    //实现秒表
+    var stopwatch = new Stopwatch();
+    var secondsInput = document.getElementById('secondsInput');
+    var startStopButton = document.getElementById('startStopButton');
+
+    startStopButton.onclick = function(e){
+        let value = startStopButton.value;
+        if(value === 'start'){
+            stopwatch.start();
+            startStopButton.value = 'stop';
+            secondsInput.disabled = true;
+            requestNextAnimationFrame(animate);
+        }else{
+            stopwatch.stop();
+            startStopButton.value = 'start';
+            secondsInput.disabled = false;
+            timerSetting = parseFloat(secondsInput.value);
+        }
+        stopwatch.reset();
+    }
+
+    function animate(){
+        if(stopwatch.isRunning() && stopwatch.getElapsedTime() > timerSetting*1000 ){
+            stopwatch.stop();
+            startStopButton.value = 'start';
+            secondsInput.disabled = false;
+            secondsInput.value = 0;
+        }else if(stopwatch.isRunning()){
+            redraw();
+            requestNextAnimationFrame(animate);
+        }
+    }
+
+
+
+
+
+
+
+
+</script>
+</html>
