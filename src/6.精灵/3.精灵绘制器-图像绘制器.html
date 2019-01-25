@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+</style>
+<body>
+  <canvas id="canvas" width="800" height="800">
+    Canvas not supported
+  </canvas>
+</body>
+
+<script src="sprite.js"></script>
+<script src="grid.js"></script>
+<script src="requestNextAnimationFrame.js"></script>
+<script>
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+var ImagePainter = function(imageUrl){
+  this.image = new Image();
+  this.image.src = imageUrl;
+}
+ImagePainter.prototype = {
+  paint: function(sprite, con){
+    //console.log(this.image.complete);
+    if(this.image.complete){ //图像加载之后绘制
+      con.drawImage(this.image,sprite.left,sprite.top,sprite.width,sprite.height);
+    }
+  }
+}
+
+
+var bombImage = 'https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1548410384348&di=69eafed4a554f16f2f66e016c00fa6f6&imgtype=0&src=http%3A%2F%2Fbpic.588ku.com%2Felement_origin_min_pic%2F00%2F00%2F09%2F1757dca9db31542.jpg';
+var bomb = new Sprite('bomb',new ImagePainter(bombImage));
+
+
+function animate(){
+  con.clearRect(0,0,canvas.width,canvas.height);
+  drawGrid('lightgray',10,10,canvas);
+  bomb.paint(con);
+
+  window.requestNextAnimationFrame(animate);
+}
+bomb.left = 220;
+bomb.top = 80;
+bomb.width= 650/2;
+bomb.height = 955/2;
+window.requestNextAnimationFrame(animate);
+</script>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+</style>
+<body>
+  <canvas id="canvas" width="800" height="800">
+    Canvas not supported
+  </canvas>
+</body>
+
+<script src="sprite.js"></script>
+<script src="grid.js"></script>
+<script>
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+var ballPainter = {
+  paint: function(sprite,con){
+    con.save()
+    con.beginPath();
+    con.arc(sprite.left + sprite.width/2, sprite.top + sprite.height/2, sprite.width/2, 0 , Math.PI*2, false);
+    con.clip();
+
+    con.shadowColor = 'rgb(0,0,0)';
+    con.shadowOffsetX = -4;
+    con.shadowOffsetY = -4;
+    con.shadowBlur = 8;
+
+    con.lineWidth = 2;
+    con.strokeStyle = 'rgb(100,100,195)';
+    con.fillStyle = 'rgba(30,144,255,0.15)';
+    con.fill();
+    con.stroke();
+    con.restore();
+  }
+}
+var ball = new Sprite('ball',ballPainter);
+
+
+drawGrid('lightgray',10,10,canvas);
+ball.left = 320;
+ball.top = 160;
+ball.width = 150;
+ball.height = 150;
+ball.paint(con);
+</script>

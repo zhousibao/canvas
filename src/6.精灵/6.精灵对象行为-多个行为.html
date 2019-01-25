@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+</style>
+<body>
+  <div>
+    <input type="button" id="animateButton" value="Animate">
+  </div>
+  <canvas id="canvas" width="800" height="800">
+    Canvas not supported
+  </canvas>
+</body>
+
+<script src="sprite.js"></script>
+<script src="requestNextAnimationFrame.js"></script>
+<script>
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');
+
+// 绘制器
+var SpriteSheetPainter = function(cells){
+  this.cells = cells || [];
+  this.cellIndex = 0;
+}
+SpriteSheetPainter.prototype = {
+  advance: function(){
+    if(this.cellIndex == this.cells.length - 1 ){
+      this.cellIndex = 0;
+    }else{
+      this.cellIndex++;
+    }
+  },
+  paint: function(sprite, con){
+    let cell = this.cells[this.cellIndex];
+    con.drawImage(spriteSheet, cell.x, cell.y, cell.w, cell.h, sprite.left, sprite.top, cell.w, cell.h);
+  }
+}
+
+
+var animateButton = document.getElementById('animateButton');
+var spriteSheet = new Image();
+
+var runnerCells = [
+  { x:0, y:0, w:141, h:85},
+  { x:141, y:0, w:141, h:85},
+  { x:282, y:0, w:141, h:85},
+  { x:423, y:0, w:141, h:85},
+
+  { x:0, y:85, w:141, h:85},
+  { x:141, y:85, w:141, h:85},
+  { x:282, y:85, w:141, h:85},
+  { x:423, y:85, w:141, h:85},
+]
+spriteSheet.src = 'https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1548416735776&di=b478f7f0c3853a9edbd8e9aa6d2415bb&imgtype=jpg&src=http%3A%2F%2Fimg4.imgtn.bdimg.com%2Fit%2Fu%3D143391174%2C2624091941%26fm%3D214%26gp%3D0.jpg';
+
+
+spriteSheet.onload = function(e){
+  con.drawImage(spriteSheet,0,0);
+}
+
+// 行为
+var runInPlace = {
+  lastAdvance:0,
+  PAGEFLIP_INTERVAL:200,
+  execute: function(sprite,con,time){
+    if(time - this.lastAdvance > this.PAGEFLIP_INTERVAL){
+      sprite.painter.advance();
+      this.lastAdvance = time;
+    }
+  }
+}
+var moveLeftToRight = {
+  lastMove: 0,
+  up: false,
+  execute: function(sprite,con,time){
+    if(this.lastMove !== 0){
+      sprite.left += sprite.velocityX*((time - this.lastMove) / 1000 );
+
+      if(sprite.left > canvas.width){
+        sprite.left = -141; // 帧图的大小为 ：141
+      }
+
+      if(this.up){
+        sprite.top -= sprite.velocityY*((time - this.lastMove) / 1000 );
+      }else{
+        sprite.top += sprite.velocityY*((time - this.lastMove) / 1000 );
+      }
+      if(sprite.top > 400){
+        this.up = true;
+      }else if(sprite.top < 200){
+        this.up = false;
+      }
+
+      this.lastMove = time;
+    }
+  }
+}
+
+
+
+var runner = new Sprite('runner',new SpriteSheetPainter(runnerCells), [runInPlace, moveLeftToRight]);
+runner.left = 0;
+runner.top = 200;
+runner.velocityX = 200;
+runner.velocityY = 100;
+
+var interval,
+paused = false;
+
+// 动画
+function animate(){
+  let time = +new Date();
+  if(!paused){
+    con.clearRect(0,0,canvas.width,canvas.height);
+    runner.update(con,time);
+    runner.paint(con);
+
+    window.requestNextAnimationFrame(animate);
+  }
+}
+
+
+
+
+// 停止动画
+function pauseAnimation(){
+  animateButton.value = 'Animate';
+  paused = true;
+}
+
+// 开始动画
+function startAnimation(){
+  animateButton.value = 'Pause';
+  paused = false;
+  runInPlace.lastAdvance = +new Date();
+  moveLeftToRight.lastMove = +new Date();
+  window.requestNextAnimationFrame(animate);
+}
+
+// 事件行为
+animateButton.onclick = function(e){
+  if(animateButton.value === 'Animate'){
+    startAnimation();
+  }else{
+    pauseAnimation();
+  }
+}
+</script>

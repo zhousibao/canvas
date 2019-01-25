@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A Simple Canvas Example</title>
+</head>
+
+<style type="text/css">
+body{
+  background: #ddd;
+  margin: 0;
+}
+#canvas{
+  background: #fff;
+  border:1px inset #aaa;
+}
+</style>
+<body>
+  <div>
+    <input type="button" id="animateButton" value="Animate">
+  </div>
+  <canvas id="canvas" width="800" height="800">
+    Canvas not supported
+  </canvas>
+</body>
+
+<script src="sprite.js"></script>
+<script src="requestNextAnimationFrame.js"></script>
+<script>
+var canvas = document.getElementById('canvas');
+var con = canvas.getContext('2d');;
+
+var SpriteSheetPainter = function(cells){
+  this.cells = cells || [];
+  this.cellIndex = 0;
+}
+SpriteSheetPainter.prototype = {
+  advance: function(){
+    if(this.cellIndex == this.cells.length - 1 ){
+      this.cellIndex = 0;
+    }else{
+      this.cellIndex++;
+    }
+  },
+  paint: function(sprite, con){
+    let cell = this.cells[this.cellIndex];
+    con.drawImage(spriteSheet, cell.x, cell.y, cell.w, cell.h, sprite.left, sprite.top, cell.w, cell.h);
+  }
+}
+
+
+var animateButton = document.getElementById('animateButton');
+var spriteSheet = new Image();
+
+// var runnerCells = [
+//   { x:0, y:0, w:93, h:175},
+//   { x:93, y:0, w:93, h:175},
+//   { x:186, y:0, w:93, h:175},
+//   { x:279, y:0, w:93, h:175}
+// ]
+// spriteSheet.src = 'https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1548413041573&di=8dfb94b9a9afed3c83bf00b2892ba0c2&imgtype=0&src=http%3A%2F%2Fimg.bqatj.com%2Fimg%2F01c6e3bc39b077a2.jpg';
+
+var runnerCells = [
+  { x:0, y:0, w:240, h:238.67},
+  { x:240, y:0, w:240, h:238.67},
+  { x:480, y:0, w:240, h:238.67},
+  { x:720, y:0, w:240, h:238.67},
+  { x:960, y:0, w:240, h:238.67},
+
+  { x:0, y:238.67, w:240, h:238.67},
+  { x:240, y:238.67, w:240, h:238.67},
+  { x:480, y:238.67, w:240, h:238.67},
+  { x:720, y:238.67, w:240, h:238.67},
+  { x:960, y:238.67, w:240, h:238.67},
+
+  { x:0, y:477.34, w:240, h:238.67},
+  { x:240, y:477.34, w:240, h:238.67},
+  { x:480, y:477.34, w:240, h:238.67},
+  { x:720, y:477.34, w:240, h:238.67},
+  { x:960, y:477.34, w:240, h:238.67},
+]
+spriteSheet.src = 'https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1548414684811&di=6fad17a7e016262f17dd9ad2b3286a63&imgtype=0&src=http%3A%2F%2Fimgsrc.baidu.com%2Fimage%2Fc0%253Dshijue1%252C0%252C0%252C294%252C40%2Fsign%3D9f616b95de3f8794c7f2406dba726481%2Fa5c27d1ed21b0ef416f11073d7c451da81cb3e85.jpg';
+
+
+
+
+spriteSheet.onload = function(e){
+  con.drawImage(spriteSheet,0,0);
+}
+
+var runner = new Sprite('runner',new SpriteSheetPainter(runnerCells));
+runner.left = 200;
+runner.top = 200;
+
+var interval,
+lastAdvance = 0,
+paused = false,
+PAGEFLIP_INTERVAL = 200; //200毫秒执行一次advance函数
+
+
+function pauseAnimation(){
+  animateButton.value = 'Animate';
+  paused = true;
+}
+
+function startAnimation(){
+  animateButton.value = 'Pause';
+  paused = false;
+  lastAdvance = +new Date();
+  window.requestNextAnimationFrame(animate);
+}
+
+animateButton.onclick = function(e){
+  if(animateButton.value === 'Animate'){
+    startAnimation();
+  }else{
+    pauseAnimation();
+  }
+}
+
+
+function animate(){
+  let time = +new Date();
+  if(!paused){
+    con.clearRect(0,0,canvas.width,canvas.height);
+    //con.drawImage(spriteSheet,0,0);
+    runner.paint(con);
+
+    if(time - lastAdvance >= PAGEFLIP_INTERVAL){
+      runner.painter.advance();
+      lastAdvance = time;
+    }
+    window.requestNextAnimationFrame(animate);
+  }
+}
+</script>
