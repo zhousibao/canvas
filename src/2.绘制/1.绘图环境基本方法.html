@@ -12,7 +12,6 @@
     }
     #canvas{
         margin: 10px;
-        padding: 10px;
         background: #fff;
         border:thin inset #aaa;
     }
@@ -27,7 +26,7 @@
 /**
  *
 
-  rect()	创建矩形
+  rect()	创建矩形路径
   fillRect()	绘制“被填充”的矩形
   strokeRect()	绘制描边矩形
   clearRect()	在给定的矩形内清除指定的像素
@@ -41,7 +40,7 @@
   moveTo()	把路径移动到画布中的指定点，不创建线条
   lineTo()	添加一个新点，然后在画布中创建从该点到最后指定点的线条
   arc()	创建弧/曲线（用于创建圆形或部分圆）
-  arcTo(x1,y1,x2,y2,r)	创建两切线之间的弧/曲线  (x1,y1)圆点   (x2,y2)圆弧终点   r半径          圆弧起点为当前点
+  arcTo(x1,y1,x2,y2,r)	创建两切线之间的弧/曲线  (x1,y1)圆点  (x2,y2)圆弧终点  r半径  圆弧起点为当前点
 
   clip()	从原始画布剪切任意形状和尺寸的区域，设定裁剪区域后，只有在区域内的图像才能显示
   isPointInPath()	如果指定的点位于当前路径中，则返回 true，否则返回 false
@@ -72,6 +71,7 @@ context.stroke();
 
 context.beginPath();
 context.arc(300,100,100,0,Math.PI,false);
+context.closePath()
 context.stroke();
 
 context.beginPath()
