@@ -27,11 +27,11 @@
 <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
 <script>
 /**
- *  1.getImageData() 从Canvas画板上取得所选区域的像素数据
+ *  1.getImageData(x,y,width,height) 从Canvas画板上取得所选区域的像素数据
 
-    2.putImageData() 方法函数则表示将所得到的像素数据描画到Canvas画板上形成图形
+    2.putImageData(imgData,x,y) 方法函数则表示将所得到的像素数据描画到Canvas画板上形成图形
 
-    3.createImageData() 方法创建新的空白 ImageData 对象。
+    3.createImageData(width,height) 方法创建新的空白 ImageData 对象。
  */
 const canvas = document.getElementById('canvas'), 
 context = canvas.getContext('2d');

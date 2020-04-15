@@ -141,8 +141,6 @@ function restoreDrawingSurface(){
   con.putImageData(drawingSurfaceImageData,0,0);
 }
 
-
-
 // 绘制圆
 function drawArc(loc) {
   let redius = Math.sqrt((loc.x-mousedown.x)*(loc.x-mousedown.x) + (loc.y- mousedown.y)*(loc.y- mousedown.y));
@@ -182,10 +180,6 @@ function drawEraser(loc){
   con.restore();
 }
 
-
-
-
-
 //事件
 canvas.onmousedown = function(e){
   let loc = windowToCanvas(e.clientX,e.clientY);
@@ -224,12 +218,6 @@ canvas.onmouseup = function (e) {
   }
   dragging = false;
 }
-
-
-
-
-
-
 
 </script>
 </html>
