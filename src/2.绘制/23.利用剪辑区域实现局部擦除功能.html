@@ -6,14 +6,14 @@
 </head>
 
 <style type="text/css">
-    body{
-        background: #ddd;
-        margin: 0;
-    }
-    #canvas{
-        background: #fff;
-        border:thin inset #aaa;
-    }
+  body{
+    background: #ddd;
+    margin: 0;
+  }
+  #canvas{
+    background: #fff;
+    border:thin inset #aaa;
+  }
 </style>
 <body>
 <div id="controls">
@@ -155,18 +155,18 @@ function drawClipPath(loc){
 
 // 计算矩形
 function calcRect(loc){
-    if(mousedown.x <= loc.x){
-        rectShape.x = mousedown.x
-    }else{
-        rectShape.x = loc.x
-    }
-    if(mousedown.y <= loc.y){
-        rectShape.y = mousedown.y
-    }else{
-        rectShape.y = loc.y
-    }
-    rectShape.width = Math.abs(mousedown.x - loc.x);
-    rectShape.height = Math.abs(mousedown.y - loc.y);
+  if(mousedown.x <= loc.x){
+      rectShape.x = mousedown.x
+  }else{
+      rectShape.x = loc.x
+  }
+  if(mousedown.y <= loc.y){
+      rectShape.y = mousedown.y
+  }else{
+      rectShape.y = loc.y
+  }
+  rectShape.width = Math.abs(mousedown.x - loc.x);
+  rectShape.height = Math.abs(mousedown.y - loc.y);
 }
 
 // 执行橡皮擦
@@ -178,13 +178,13 @@ function drawEraser(loc){
 }
 // 填充矩形
 function fillRect(loc){
-    calcRect(loc);
-    con.beginPath();
-    con.save();
-    con.fillStyle = 'rgba(25,130,255,0.2)';
-    con.rect(rectShape.x,rectShape.y,rectShape.width,rectShape.height);
-    con.fill();
-    con.restore();
+  calcRect(loc);
+  con.beginPath();
+  con.save();
+  con.fillStyle = 'rgba(25,130,255,0.2)';
+  con.rect(rectShape.x,rectShape.y,rectShape.width,rectShape.height);
+  con.fill();
+  con.restore();
 }
 
 
@@ -223,32 +223,26 @@ canvas.onmousemove = function (e) {
 }
 
 canvas.onmouseup = function (e) {
-    let loc = windowToCanvas(e.clientX,e.clientY);
-    if(dragging){
-        if(!isEraserCheckbox.checked){
-            restoreDrawingSurface();//相当于擦除过程中的线段
-            drawArc(loc);
-        }else{
-            drawEraser(loc);
-        }
-        dragging = false;
+  let loc = windowToCanvas(e.clientX,e.clientY);
+  if(dragging){
+    if(!isEraserCheckbox.checked){
+      restoreDrawingSurface();//相当于擦除过程中的线段
+      drawArc(loc);
+    }else{
+      drawEraser(loc);
     }
-  
-  
+    dragging = false;
+  }
 }
 
 window.onmouseup = function (e) {
-    if(dragging){
-        if(isEraserCheckbox.checked){
-            drawEraser(windowMouseup);
-        }
-        dragging = false;
+  if(dragging){
+    if(isEraserCheckbox.checked){
+      drawEraser(windowMouseup);
     }
+    dragging = false;
+  }
 }
-
-
-
-
 
 </script>
 </html>
